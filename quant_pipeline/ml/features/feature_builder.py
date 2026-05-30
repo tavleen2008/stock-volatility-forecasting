@@ -39,9 +39,43 @@ class FeatureBuilder:
         frame["returns"] = frame["close"].pct_change()
         frame["log_returns"] = np.log(frame["close"] / frame["close"].shift(1))
 
-        frame["rv_daily"] = frame["realized_variance"].shift(1)
-        frame["rv_weekly"] = frame["realized_variance"].shift(1).rolling(5).mean()
-        frame["rv_monthly"] = frame["realized_variance"].shift(1).rolling(22).mean()
+        # Build variance-domain features (realized variance)
+        frame["rv_var_daily"] = frame["realized_variance"].shift(1)
+        frame["rv_var_weekly"] = frame["realized_variance"].shift(1).rolling(5).mean()
+        frame["rv_var_monthly"] = frame["realized_variance"].shift(1).rolling(22).mean()
+
+        # Add log-transformed variance features to stabilize heavy tails.
+        eps = 1e-12
+        frame["log_rv_var_daily"] = np.log(frame["rv_var_daily"].clip(lower=eps))
+        frame["log_rv_var_weekly"] = np.log(frame["rv_var_weekly"].clip(lower=eps))
+        frame["log_rv_var_monthly"] = np.log(frame["rv_var_monthly"].clip(lower=eps))
+
+        # Short-lag and spike-sensitive features to improve responsiveness to shocks
+        # Provide both variance-domain and volatility-domain lag features
+        # Variance lags
+        frame["rv_var_t"] = frame["realized_variance"]
+        frame["rv_var_t_minus1"] = frame["realized_variance"].shift(1)
+        frame["rv_var_t_minus2"] = frame["realized_variance"].shift(2)
+
+        # Volatility-domain features (annualized volatility already available in market_df)
+        frame["rv_daily"] = frame["realized_volatility"].shift(1)
+        frame["rv_weekly"] = frame["realized_volatility"].shift(1).rolling(5).mean()
+        frame["rv_monthly"] = frame["realized_volatility"].shift(1).rolling(22).mean()
+
+        frame["rv_t"] = frame["realized_volatility"]
+        frame["rv_t_minus1"] = frame["realized_volatility"].shift(1)
+        frame["rv_t_minus2"] = frame["realized_volatility"].shift(2)
+
+        # Short-window rolling std to capture recent volatility increases
+        frame["rv_2day_std"] = frame["realized_volatility"].shift(1).rolling(2, min_periods=1).std().fillna(0.0)
+        frame["rv_3day_std"] = frame["realized_volatility"].shift(1).rolling(3, min_periods=1).std().fillna(0.0)
+
+        # Overnight and absolute return features (useful shock proxies)
+        frame["overnight_return"] = frame["close"] / frame["close"].shift(1) - 1
+        frame["abs_return"] = frame["returns"].abs()
+
+        # Approximate realized quarticity (using 4th power of log returns averaged)
+        frame["realized_quarticity"] = frame["log_returns"].pow(4).rolling(5, min_periods=1).mean().fillna(0.0)
 
         sentiment = sentiment_daily_df.copy()
         if not sentiment.empty:
@@ -66,6 +100,9 @@ class FeatureBuilder:
 
         frame["future_realized_variance"] = frame["realized_variance"].shift(-forecast_horizon)
         frame["future_realized_volatility"] = frame["realized_volatility"].shift(-forecast_horizon)
+
+        # Log target for variance (useful for linear models)
+        frame["log_future_realized_variance"] = np.log(frame["future_realized_variance"].clip(lower=eps))
 
         output = frame.replace([np.inf, -np.inf], np.nan).dropna().reset_index(drop=True)
         logger.info("Feature build completed", extra={"rows": len(output), "horizon": forecast_horizon})

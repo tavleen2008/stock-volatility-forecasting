@@ -19,11 +19,13 @@ class HARModel:
         use_sentiment: bool = False,
         estimator: Literal["linear", "ridge"] = "linear",
         ridge_alpha: float = 1.0,
+        feature_columns: list[str] | None = None,
     ) -> None:
         self.use_sentiment = use_sentiment
         self.estimator_name = estimator
         self.ridge_alpha = ridge_alpha
-        self.feature_columns = ["rv_daily", "rv_weekly", "rv_monthly"]
+        # allow custom feature columns; default to classic HAR lags
+        self.feature_columns = feature_columns if feature_columns is not None else ["rv_daily", "rv_weekly", "rv_monthly"]
         self.sentiment_columns = [
             "mean_sentiment",
             "std_sentiment",
@@ -51,6 +53,9 @@ class HARModel:
             raise ValueError(f"Missing HAR feature columns in x_test: {missing}")
         pred = self.model.predict(x_test[self.feature_columns])
         logger.info("HAR prediction completed", extra={"rows": len(x_test)})
+        # Volatility cannot be negative — clip predictions at zero for safety
+        import numpy as _np
+        pred = _np.maximum(pred, 0.0)
         return pd.Series(pred, index=x_test.index, name="prediction")
 
     def save(self, path: str | Path) -> None:

@@ -166,7 +166,8 @@ def main() -> None:
             sent_var = x_train_sent[sent_cols].var(numeric_only=True)
             if sent_var.isnull().all() or (sent_var.fillna(0.0) <= 1e-12).all():
                 logger.info("Sentiment features constant or missing; skipping sentiment model", extra={"ticker": ticker})
-                sentiment_pred = base_model.predict(x_test_base).reindex(y_test.index)
+                # Use the base model predictions on the properly scaled base features
+                sentiment_pred = base_model.predict(x_test_base_scaled).reindex(y_test.index)
             else:
                 sentiment_model.fit(x_train_sent_scaled, y_train)
                 sentiment_pred = sentiment_model.predict(x_test_sent_scaled).reindex(y_test.index)

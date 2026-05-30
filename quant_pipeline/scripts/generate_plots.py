@@ -28,10 +28,20 @@ from pathlib import Path
 
 try:
     import seaborn as sns
-    sns.set(style='whitegrid')
+    sns.set_theme(style='whitegrid', palette='tab10')
     HAS_SEABORN = True
 except Exception:
     HAS_SEABORN = False
+
+# ensure matplotlib figures use a light, presentation-friendly background
+plt.rcParams.update({
+    'figure.facecolor': 'white',
+    'axes.facecolor': 'white',
+    'axes.edgecolor': '#333333',
+    'axes.grid': True,
+    'grid.color': '#e6e6e6',
+    'legend.frameon': False,
+})
 
 config = DataConfig()
 fb = FeatureBuilder()
@@ -49,7 +59,7 @@ MODELS = ['har_forecast', 'har_sentiment_forecast', 'har_log_forecast', 'xgb_for
 
 def plot_actual_vs_forecasts(df: pd.DataFrame, ticker: str):
     plt.figure(figsize=(12,5))
-    plt.plot(pd.to_datetime(df['date']), df['actual_volatility'], label='Actual', linewidth=2)
+    plt.plot(pd.to_datetime(df['date']), df['actual_volatility'], label='Actual', linewidth=2, color='tab:blue')
     for m in MODELS:
         if m in df.columns:
             plt.plot(pd.to_datetime(df['date']), df[m], label=m)
@@ -71,9 +81,9 @@ def plot_residuals(df: pd.DataFrame, ticker: str):
             res = y - df[m]
             plt.figure(figsize=(6,4))
             if HAS_SEABORN:
-                sns.histplot(res.dropna(), bins=50, kde=True)
+                sns.histplot(res.dropna(), bins=50, kde=True, color='C1')
             else:
-                plt.hist(res.dropna(), bins=50, density=True, alpha=0.7)
+                plt.hist(res.dropna(), bins=50, density=True, alpha=0.7, color='#7f7f7f')
             plt.title(f'{ticker} Residuals: {m}')
             plt.xlabel('Residual (actual - pred)')
             out = OUT_PLOTS / f'{ticker}_residuals_{m}.png'
@@ -85,9 +95,9 @@ def plot_residuals(df: pd.DataFrame, ticker: str):
 def plot_volatility_distribution(df: pd.DataFrame, ticker: str):
     plt.figure(figsize=(6,4))
     if HAS_SEABORN:
-        sns.histplot(df['actual_volatility'].dropna(), bins=60, kde=True)
+        sns.histplot(df['actual_volatility'].dropna(), bins=60, kde=True, color='C2')
     else:
-        plt.hist(df['actual_volatility'].dropna(), bins=60, density=True, alpha=0.7)
+        plt.hist(df['actual_volatility'].dropna(), bins=60, density=True, alpha=0.7, color='#555555')
     plt.title(f'{ticker} Volatility Distribution')
     out = OUT_PLOTS / f'{ticker}_volatility_hist.png'
     plt.tight_layout()

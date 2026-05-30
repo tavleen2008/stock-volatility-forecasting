@@ -135,6 +135,17 @@ exports.Prisma.UserScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.NewsArticleScalarFieldEnum = {
+  id: 'id',
+  symbol: 'symbol',
+  title: 'title',
+  description: 'description',
+  source: 'source',
+  articleUrl: 'articleUrl',
+  publishedAt: 'publishedAt',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
@@ -155,7 +166,8 @@ exports.AuthProvider = exports.$Enums.AuthProvider = {
 };
 
 exports.Prisma.ModelName = {
-  User: 'User'
+  User: 'User',
+  NewsArticle: 'NewsArticle'
 };
 
 /**

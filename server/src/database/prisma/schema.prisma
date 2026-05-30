@@ -19,8 +19,6 @@ model User {
   email       String       @unique
   name        String?
 
-  password    String?
-
   avatarUrl   String?
 
   provider    AuthProvider @default(GOOGLE)
@@ -37,4 +35,25 @@ model User {
 enum AuthProvider {
   GOOGLE
   LOCAL
+}
+
+model NewsArticle {
+  id          String   @id @default(uuid())
+
+  symbol      String
+
+  title       String
+
+  description String?
+
+  source      String?
+
+  articleUrl  String   @unique
+
+  publishedAt DateTime
+
+  createdAt   DateTime @default(now())
+
+  @@index([symbol])
+  @@index([publishedAt])
 }

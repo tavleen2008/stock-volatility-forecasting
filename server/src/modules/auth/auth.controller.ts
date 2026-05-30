@@ -1,5 +1,42 @@
-import { Request, Response } from 'express';
+﻿import { Request, Response, NextFunction } from 'express';
+import * as authService from './auth.service';
+import config from '../../config/env';
+import type { User } from './auth.service';
 
-export const login = (req: Request, res: Response) => {
-    res.json({ message: 'login not implemented' });
+const sanitizeUser = (user: User) => {
+    const { passwordHash, ...rest } = user;
+    return rest;
+};
+
+export const googleCallback = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const user = req.user as User | undefined;
+        if (!user) {
+            return res.status(401).json({ message: 'Authentication failed' });
+        }
+
+        const token = authService.createJwtToken(user);
+
+        if (config.frontendUrl) {
+            const redirectUrl = `${config.frontendUrl.replace(/\/$/, '')}/auth/success?token=${encodeURIComponent(
+                token
+            )}`;
+            return res.redirect(redirectUrl);
+        }
+
+        return res.json({
+            user: sanitizeUser(user),
+            token,
+        });
+    } catch (error) {
+        return next(error);
+    }
+};
+
+export const me = async (req: Request, res: Response) => {
+    if (!req.user) {
+        return res.status(401).json({ message: 'Not authenticated' });
+    }
+
+    return res.json({ user: sanitizeUser(req.user as User) });
 };

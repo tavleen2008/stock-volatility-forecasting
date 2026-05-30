@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import passport from './config/passport';
 
 import authRouter from './modules/auth/auth.routes';
 import usersRouter from './modules/users/user.routes';
@@ -17,6 +18,7 @@ const app = express();
 app.use(cors());
 app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
 app.use(express.json());
+app.use(passport.initialize());
 
 app.use(requestLogger);
 

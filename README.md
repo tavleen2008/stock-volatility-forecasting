@@ -1,6 +1,6 @@
 # Financial Analytics Dashboard
 
-A modern, professional financial analytics dashboard built with React and JavaScript. Features real-time market data visualization, interactive charts, and a responsive multi-panel layout similar to Koyfin.
+A modern, professional financial analytics dashboard built with React and JavaScript. Features real-time market data visualization, interactive charts, and a responsive multi-panel layout.
 
 ## Features
 

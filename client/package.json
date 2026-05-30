@@ -12,6 +12,7 @@
     "pg": "^8.21.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-router-dom": "^7.16.0",
     "recharts": "^2.10.0"
   },
   "scripts": {

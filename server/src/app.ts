@@ -15,7 +15,10 @@ import config from './config/env';
 
 const app = express();
 
-app.use(cors());
+app.use(cors({
+    origin: config.frontendUrl || 'http://localhost:5173',
+    credentials: true,
+}));
 app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
 app.use(express.json());
 app.use(passport.initialize());

@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import MainContent from './components/MainContent';
+import AuthSuccess from './pages/AuthSuccess';
 
-function App() {
+function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('theme-mode');
@@ -24,10 +27,27 @@ function App() {
     <div className={`flex h-screen transition-colors duration-300 ${isDarkMode ? 'bg-dark-bg text-white' : 'bg-gray-50 text-gray-900'}`}>
       <Sidebar isOpen={sidebarOpen} isDarkMode={isDarkMode} />
       <div className="flex flex-col flex-1 overflow-hidden">
-        <Header onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} isDarkMode={isDarkMode} onToggleTheme={handleToggleTheme} />
+        <Header
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          isDarkMode={isDarkMode}
+          onToggleTheme={handleToggleTheme}
+        />
         <MainContent isDarkMode={isDarkMode} />
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AuthProvider>
+        <Routes>
+          <Route path="/auth/success" element={<AuthSuccess />} />
+          <Route path="/*" element={<Layout />} />
+        </Routes>
+      </AuthProvider>
+    </BrowserRouter>
   );
 }
 

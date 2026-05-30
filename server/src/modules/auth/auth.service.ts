@@ -2,15 +2,9 @@ import jwt from 'jsonwebtoken';
 
 import { prisma } from '../../config/prisma';
 import config from '../../config/env';
+import { AUTH_CONSTANTS } from './auth.constants';
 
 export type User = NonNullable<Awaited<ReturnType<typeof prisma.user.findUnique>>>;
-
-export interface GoogleUserPayload {
-    providerId: string;
-    email: string;
-    name?: string;
-    avatarUrl?: string;
-}
 
 export const createJwtToken = (user: User) => {
     return jwt.sign(
@@ -22,52 +16,7 @@ export const createJwtToken = (user: User) => {
         },
         config.jwtAccessSecret,
         {
-            expiresIn: '7d',
+            expiresIn: AUTH_CONSTANTS.JWT_EXPIRES_IN,
         }
     );
-};
-
-export const findOrCreateGoogleUser = async ({ providerId, email, name, avatarUrl }: GoogleUserPayload) => {
-    const existingByProvider = await prisma.user.findFirst({
-        where: {
-            providerId,
-            provider: 'GOOGLE',
-        },
-    });
-
-    if (existingByProvider) {
-        return existingByProvider;
-    }
-
-    const existingByEmail = await prisma.user.findUnique({
-        where: {
-            email,
-        },
-    });
-
-    if (existingByEmail) {
-        return prisma.user.update({
-            where: {
-                email,
-            },
-            data: {
-                provider: 'GOOGLE',
-                providerId,
-                avatarUrl,
-                isVerified: true,
-                name: existingByEmail.name || name,
-            },
-        });
-    }
-
-    return prisma.user.create({
-        data: {
-            email,
-            provider: 'GOOGLE',
-            providerId,
-            name,
-            avatarUrl,
-            isVerified: true,
-        },
-    });
 };

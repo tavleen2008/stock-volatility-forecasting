@@ -24,7 +24,6 @@ export type User = $Result.DefaultSelection<Prisma.$UserPayload>
  */
 export namespace $Enums {
   export const AuthProvider: {
-  LOCAL: 'LOCAL',
   GOOGLE: 'GOOGLE'
 };
 
@@ -874,7 +873,6 @@ export namespace Prisma {
     id: string | null
     email: string | null
     name: string | null
-    passwordHash: string | null
     avatarUrl: string | null
     provider: $Enums.AuthProvider | null
     providerId: string | null
@@ -887,7 +885,6 @@ export namespace Prisma {
     id: string | null
     email: string | null
     name: string | null
-    passwordHash: string | null
     avatarUrl: string | null
     provider: $Enums.AuthProvider | null
     providerId: string | null
@@ -900,7 +897,6 @@ export namespace Prisma {
     id: number
     email: number
     name: number
-    passwordHash: number
     avatarUrl: number
     provider: number
     providerId: number
@@ -915,7 +911,6 @@ export namespace Prisma {
     id?: true
     email?: true
     name?: true
-    passwordHash?: true
     avatarUrl?: true
     provider?: true
     providerId?: true
@@ -928,7 +923,6 @@ export namespace Prisma {
     id?: true
     email?: true
     name?: true
-    passwordHash?: true
     avatarUrl?: true
     provider?: true
     providerId?: true
@@ -941,7 +935,6 @@ export namespace Prisma {
     id?: true
     email?: true
     name?: true
-    passwordHash?: true
     avatarUrl?: true
     provider?: true
     providerId?: true
@@ -1027,7 +1020,6 @@ export namespace Prisma {
     id: string
     email: string
     name: string | null
-    passwordHash: string | null
     avatarUrl: string | null
     provider: $Enums.AuthProvider
     providerId: string | null
@@ -1057,7 +1049,6 @@ export namespace Prisma {
     id?: boolean
     email?: boolean
     name?: boolean
-    passwordHash?: boolean
     avatarUrl?: boolean
     provider?: boolean
     providerId?: boolean
@@ -1070,7 +1061,6 @@ export namespace Prisma {
     id?: boolean
     email?: boolean
     name?: boolean
-    passwordHash?: boolean
     avatarUrl?: boolean
     provider?: boolean
     providerId?: boolean
@@ -1083,7 +1073,6 @@ export namespace Prisma {
     id?: boolean
     email?: boolean
     name?: boolean
-    passwordHash?: boolean
     avatarUrl?: boolean
     provider?: boolean
     providerId?: boolean
@@ -1100,7 +1089,6 @@ export namespace Prisma {
       id: string
       email: string
       name: string | null
-      passwordHash: string | null
       avatarUrl: string | null
       provider: $Enums.AuthProvider
       providerId: string | null
@@ -1503,7 +1491,6 @@ export namespace Prisma {
     readonly id: FieldRef<"User", 'String'>
     readonly email: FieldRef<"User", 'String'>
     readonly name: FieldRef<"User", 'String'>
-    readonly passwordHash: FieldRef<"User", 'String'>
     readonly avatarUrl: FieldRef<"User", 'String'>
     readonly provider: FieldRef<"User", 'AuthProvider'>
     readonly providerId: FieldRef<"User", 'String'>
@@ -1816,7 +1803,6 @@ export namespace Prisma {
     id: 'id',
     email: 'email',
     name: 'name',
-    passwordHash: 'passwordHash',
     avatarUrl: 'avatarUrl',
     provider: 'provider',
     providerId: 'providerId',
@@ -1930,7 +1916,6 @@ export namespace Prisma {
     id?: StringFilter<"User"> | string
     email?: StringFilter<"User"> | string
     name?: StringNullableFilter<"User"> | string | null
-    passwordHash?: StringNullableFilter<"User"> | string | null
     avatarUrl?: StringNullableFilter<"User"> | string | null
     provider?: EnumAuthProviderFilter<"User"> | $Enums.AuthProvider
     providerId?: StringNullableFilter<"User"> | string | null
@@ -1943,7 +1928,6 @@ export namespace Prisma {
     id?: SortOrder
     email?: SortOrder
     name?: SortOrderInput | SortOrder
-    passwordHash?: SortOrderInput | SortOrder
     avatarUrl?: SortOrderInput | SortOrder
     provider?: SortOrder
     providerId?: SortOrderInput | SortOrder
@@ -1959,7 +1943,6 @@ export namespace Prisma {
     OR?: UserWhereInput[]
     NOT?: UserWhereInput | UserWhereInput[]
     name?: StringNullableFilter<"User"> | string | null
-    passwordHash?: StringNullableFilter<"User"> | string | null
     avatarUrl?: StringNullableFilter<"User"> | string | null
     provider?: EnumAuthProviderFilter<"User"> | $Enums.AuthProvider
     providerId?: StringNullableFilter<"User"> | string | null
@@ -1972,7 +1955,6 @@ export namespace Prisma {
     id?: SortOrder
     email?: SortOrder
     name?: SortOrderInput | SortOrder
-    passwordHash?: SortOrderInput | SortOrder
     avatarUrl?: SortOrderInput | SortOrder
     provider?: SortOrder
     providerId?: SortOrderInput | SortOrder
@@ -1991,7 +1973,6 @@ export namespace Prisma {
     id?: StringWithAggregatesFilter<"User"> | string
     email?: StringWithAggregatesFilter<"User"> | string
     name?: StringNullableWithAggregatesFilter<"User"> | string | null
-    passwordHash?: StringNullableWithAggregatesFilter<"User"> | string | null
     avatarUrl?: StringNullableWithAggregatesFilter<"User"> | string | null
     provider?: EnumAuthProviderWithAggregatesFilter<"User"> | $Enums.AuthProvider
     providerId?: StringNullableWithAggregatesFilter<"User"> | string | null
@@ -2004,7 +1985,6 @@ export namespace Prisma {
     id?: string
     email: string
     name?: string | null
-    passwordHash?: string | null
     avatarUrl?: string | null
     provider?: $Enums.AuthProvider
     providerId?: string | null
@@ -2017,7 +1997,6 @@ export namespace Prisma {
     id?: string
     email: string
     name?: string | null
-    passwordHash?: string | null
     avatarUrl?: string | null
     provider?: $Enums.AuthProvider
     providerId?: string | null
@@ -2030,7 +2009,6 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
-    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     avatarUrl?: NullableStringFieldUpdateOperationsInput | string | null
     provider?: EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
     providerId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -2043,7 +2021,6 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
-    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     avatarUrl?: NullableStringFieldUpdateOperationsInput | string | null
     provider?: EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
     providerId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -2056,7 +2033,6 @@ export namespace Prisma {
     id?: string
     email: string
     name?: string | null
-    passwordHash?: string | null
     avatarUrl?: string | null
     provider?: $Enums.AuthProvider
     providerId?: string | null
@@ -2069,7 +2045,6 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
-    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     avatarUrl?: NullableStringFieldUpdateOperationsInput | string | null
     provider?: EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
     providerId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -2082,7 +2057,6 @@ export namespace Prisma {
     id?: StringFieldUpdateOperationsInput | string
     email?: StringFieldUpdateOperationsInput | string
     name?: NullableStringFieldUpdateOperationsInput | string | null
-    passwordHash?: NullableStringFieldUpdateOperationsInput | string | null
     avatarUrl?: NullableStringFieldUpdateOperationsInput | string | null
     provider?: EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
     providerId?: NullableStringFieldUpdateOperationsInput | string | null
@@ -2153,7 +2127,6 @@ export namespace Prisma {
     id?: SortOrder
     email?: SortOrder
     name?: SortOrder
-    passwordHash?: SortOrder
     avatarUrl?: SortOrder
     provider?: SortOrder
     providerId?: SortOrder
@@ -2166,7 +2139,6 @@ export namespace Prisma {
     id?: SortOrder
     email?: SortOrder
     name?: SortOrder
-    passwordHash?: SortOrder
     avatarUrl?: SortOrder
     provider?: SortOrder
     providerId?: SortOrder
@@ -2179,7 +2151,6 @@ export namespace Prisma {
     id?: SortOrder
     email?: SortOrder
     name?: SortOrder
-    passwordHash?: SortOrder
     avatarUrl?: SortOrder
     provider?: SortOrder
     providerId?: SortOrder

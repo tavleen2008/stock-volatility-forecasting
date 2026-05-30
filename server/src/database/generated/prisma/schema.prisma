@@ -19,11 +19,9 @@ model User {
   email String  @unique
   name  String?
 
-  passwordHash String?
-
   avatarUrl String?
 
-  provider   AuthProvider @default(LOCAL)
+  provider   AuthProvider @default(GOOGLE)
   providerId String?
 
   isVerified Boolean @default(false)
@@ -35,6 +33,5 @@ model User {
 }
 
 enum AuthProvider {
-  LOCAL
   GOOGLE
 }

@@ -1,4 +1,6 @@
-export type AuthPayload = {
-    username: string;
-    password: string;
+export type GoogleAuthPayload = {
+    providerId: string;
+    email: string;
+    name?: string;
+    avatarUrl?: string;
 };

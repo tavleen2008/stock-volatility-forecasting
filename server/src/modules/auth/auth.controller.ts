@@ -1,10 +1,14 @@
-﻿import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import * as authService from './auth.service';
 import config from '../../config/env';
 import type { User } from './auth.service';
 
+/**
+ * Strips internal/sensitive fields from the User object before sending to client.
+ * Since only Google OAuth is supported, there are no password fields to strip.
+ */
 const sanitizeUser = (user: User) => {
-    const { passwordHash, ...rest } = user;
+    const { ...rest } = user;
     return rest;
 };
 

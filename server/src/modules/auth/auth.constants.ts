@@ -1,3 +1,3 @@
 export const AUTH_CONSTANTS = {
-    TOKEN_EXPIRES_IN: '1h',
-};
+    JWT_EXPIRES_IN: '7d',
+} as const;

@@ -1,1 +1,1 @@
-const symbols = ['AAPL', 'NVDA', 'TSLA', 'MSFT'];
+export const symbols = ['AAPL', 'NVDA', 'TSLA', 'MSFT'];

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { prisma } from '../../config/prisma';
+import {symbols} from './news.constant';
 
 // Use the API key from environment variables
 const API_KEY = process.env.NEWS_API_KEY;
@@ -71,7 +72,7 @@ export const collectNewsForSymbol = async (symbol: string) => {
 };
 
 export const collectAllNews = async () => {
-    const symbols = ['AAPL', 'NVDA', 'TSLA', 'MSFT'];
+    
     console.log(`[News Collector] Starting collection cycle for ${symbols.join(', ')}`);
     
     for (const symbol of symbols) {

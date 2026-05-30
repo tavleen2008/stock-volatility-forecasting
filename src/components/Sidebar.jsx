@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { ChevronDown, Home, TrendingUp, Eye, BarChart3, BookOpen } from 'lucide-react';
+import { ChevronDown, Home, TrendingUp, Eye, BarChart3, BookOpen, Briefcase } from 'lucide-react';
 
-function Sidebar({ isOpen }) {
+function Sidebar({ isOpen, isDarkMode }) {
   const [expandedSections, setExpandedSections] = useState(['Favorites']);
 
   const toggleSection = (section) => {
@@ -22,6 +22,7 @@ function Sidebar({ isOpen }) {
     {
       title: 'Favorites',
       items: [
+        { label: 'My Portfolio', href: '/portfolio', icon: <Briefcase size={18} />, badge: 'new' },
         { label: 'Market News', href: '/news/top', icon: <BookOpen size={18} />, badge: 'top' },
         { label: 'Market Movers', href: '/mov', icon: <TrendingUp size={18} />, badge: 'mov' },
       ],
@@ -59,13 +60,18 @@ function Sidebar({ isOpen }) {
     return <div className="w-0 transition-all duration-300 ease-in-out" />;
   }
 
+  const getBgColor = () => isDarkMode ? 'bg-dark-sidebar border-dark-border' : 'bg-white border-gray-200';
+  const getTextColor = () => isDarkMode ? 'text-white' : 'text-gray-900';
+  const getHoverColor = () => isDarkMode ? 'hover:bg-dark-hover' : 'hover:bg-gray-100';
+  const getDividerColor = () => isDarkMode ? 'border-dark-border' : 'border-gray-200';
+
   return (
-    <aside className="w-72 bg-dark-card border-r border-dark-border overflow-y-auto transition-all duration-300 ease-in-out">
+    <aside className={`w-72 border-r overflow-y-auto transition-all duration-300 ease-in-out ${getBgColor()}`}>
       <nav className="py-3">
         {navSections.map((section) => (
           <div key={section.title}>
             <button
-              className="flex items-center justify-between w-full px-4 py-2.5 bg-transparent border-none text-gray-500 text-xs font-semibold uppercase cursor-pointer transition-all hover:text-white hover:bg-dark-hover"
+              className={`flex items-center justify-between w-full px-4 py-2.5 bg-transparent border-none text-xs font-semibold uppercase cursor-pointer transition-all ${isDarkMode ? 'text-gray-500 hover:text-white hover:bg-dark-hover' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
               onClick={() => toggleSection(section.title)}
             >
               <span className="tracking-wider">{section.title}</span>
@@ -81,11 +87,11 @@ function Sidebar({ isOpen }) {
                   <li key={idx}>
                     <a 
                       href={item.href} 
-                      className="flex items-center gap-2.5 px-4 py-2 text-dark-text text-sm no-underline transition-all border-l-3 border-transparent hover:text-white hover:bg-dark-hover hover:border-l-accent-cyan"
+                      className={`flex items-center gap-2.5 px-4 py-2 text-sm no-underline transition-all border-l-3 border-transparent ${isDarkMode ? 'text-dark-text hover:text-white hover:bg-dark-hover hover:border-l-accent-cyan' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100 hover:border-l-accent-blue'}`}
                     >
                       {item.icon && <span className="flex items-center justify-center w-4.5 h-4.5 flex-shrink-0">{item.icon}</span>}
                       <span className="flex-1 text-left">{item.label}</span>
-                      {item.badge && <span className="inline-block py-0.5 px-1.5 bg-dark-hover rounded text-xs text-gray-600 ml-auto">{item.badge}</span>}
+                      {item.badge && <span className={`inline-block py-0.5 px-1.5 rounded text-xs ml-auto ${isDarkMode ? 'bg-dark-hover text-gray-600' : 'bg-gray-200 text-gray-600'}`}>{item.badge}</span>}
                     </a>
                   </li>
                 ))}

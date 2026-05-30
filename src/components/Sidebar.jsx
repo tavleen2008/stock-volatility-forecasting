@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { ChevronDown, Home, TrendingUp, Eye, BarChart3, BookOpen } from 'lucide-react';
-import './Sidebar.css';
 
 function Sidebar({ isOpen }) {
   const [expandedSections, setExpandedSections] = useState(['Favorites']);
@@ -57,33 +56,36 @@ function Sidebar({ isOpen }) {
   ];
 
   if (!isOpen) {
-    return <div className="sidebar collapsed" />;
+    return <div className="w-0 transition-all duration-300 ease-in-out" />;
   }
 
   return (
-    <aside className="sidebar">
-      <nav className="nav">
+    <aside className="w-72 bg-dark-card border-r border-dark-border overflow-y-auto transition-all duration-300 ease-in-out">
+      <nav className="py-3">
         {navSections.map((section) => (
-          <div key={section.title} className="nav-section">
+          <div key={section.title}>
             <button
-              className="nav-section-header"
+              className="flex items-center justify-between w-full px-4 py-2.5 bg-transparent border-none text-gray-500 text-xs font-semibold uppercase cursor-pointer transition-all hover:text-white hover:bg-dark-hover"
               onClick={() => toggleSection(section.title)}
             >
-              <span className="section-title">{section.title}</span>
+              <span className="tracking-wider">{section.title}</span>
               <ChevronDown
                 size={18}
-                className={`chevron ${expandedSections.includes(section.title) ? 'expanded' : ''}`}
+                className={`transition-transform duration-300 ${expandedSections.includes(section.title) ? 'rotate-180' : ''}`}
               />
             </button>
 
             {expandedSections.includes(section.title) && (
-              <ul className="nav-items">
+              <ul className="list-none py-1 px-0 m-0">
                 {section.items.map((item, idx) => (
                   <li key={idx}>
-                    <a href={item.href} className="nav-link">
-                      {item.icon && <span className="nav-icon">{item.icon}</span>}
-                      <span className="nav-label">{item.label}</span>
-                      {item.badge && <span className="nav-badge">{item.badge}</span>}
+                    <a 
+                      href={item.href} 
+                      className="flex items-center gap-2.5 px-4 py-2 text-dark-text text-sm no-underline transition-all border-l-3 border-transparent hover:text-white hover:bg-dark-hover hover:border-l-accent-cyan"
+                    >
+                      {item.icon && <span className="flex items-center justify-center w-4.5 h-4.5 flex-shrink-0">{item.icon}</span>}
+                      <span className="flex-1 text-left">{item.label}</span>
+                      {item.badge && <span className="inline-block py-0.5 px-1.5 bg-dark-hover rounded text-xs text-gray-600 ml-auto">{item.badge}</span>}
                     </a>
                   </li>
                 ))}

@@ -14,7 +14,6 @@ import {
   ResponsiveContainer,
 } from 'recharts';
 import { TrendingUp, TrendingDown, DollarSign, Activity } from 'lucide-react';
-import './Dashboard.css';
 
 function Dashboard() {
   const [chartData, setChartData] = useState([]);
@@ -41,77 +40,75 @@ function Dashboard() {
   }, []);
 
   return (
-    <div className="dashboard">
+    <div className="flex flex-col gap-6">
       {/* Header Section */}
-      <div className="dashboard-header">
-        <h1>Today's Markets</h1>
-        <div className="date-range">
+      <div className="flex justify-between items-center mb-2">
+        <h1 className="text-4xl font-bold m-0">Today's Markets</h1>
+        <div className="text-gray-500 text-sm">
           <span>Last 24 Hours</span>
         </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="stats-grid">
-        <div className="stat-card">
-          <div className="stat-header">
-            <span className="stat-label">Market Index</span>
-            <DollarSign size={20} className="stat-icon" />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-dark-card border border-dark-border rounded-lg p-4 transition-all duration-300 hover:bg-dark-hover hover:border-gray-600 hover:shadow-lg hover:shadow-accent-cyan/10">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Market Index</span>
+            <DollarSign size={20} className="text-accent-cyan" />
           </div>
-          <div className="stat-value">$3,245.67</div>
-          <div className="stat-change positive">
+          <div className="text-2xl font-bold mb-2">$3,245.67</div>
+          <div className="flex items-center gap-1.5 text-sm text-accent-green">
             <TrendingUp size={16} />
             <span>+2.45%</span>
           </div>
         </div>
 
-        <div className="stat-card">
-          <div className="stat-header">
-            <span className="stat-label">Trading Volume</span>
-            <Activity size={20} className="stat-icon" />
+        <div className="bg-dark-card border border-dark-border rounded-lg p-4 transition-all duration-300 hover:bg-dark-hover hover:border-gray-600 hover:shadow-lg hover:shadow-accent-cyan/10">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Trading Volume</span>
+            <Activity size={20} className="text-accent-cyan" />
           </div>
-          <div className="stat-value">2.3B</div>
-          <div className="stat-change positive">
+          <div className="text-2xl font-bold mb-2">2.3B</div>
+          <div className="flex items-center gap-1.5 text-sm text-accent-green">
             <TrendingUp size={16} />
             <span>+12.3%</span>
           </div>
         </div>
 
-        <div className="stat-card">
-          <div className="stat-header">
-            <span className="stat-label">52-Week High</span>
-            <TrendingUp size={20} className="stat-icon" />
+        <div className="bg-dark-card border border-dark-border rounded-lg p-4 transition-all duration-300 hover:bg-dark-hover hover:border-gray-600 hover:shadow-lg hover:shadow-accent-cyan/10">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">52-Week High</span>
+            <TrendingUp size={20} className="text-accent-cyan" />
           </div>
-          <div className="stat-value">$3,456.78</div>
-          <div className="stat-change neutral">
+          <div className="text-2xl font-bold mb-2">$3,456.78</div>
+          <div className="text-sm text-gray-600">
             <span>At 98.5% of High</span>
           </div>
         </div>
 
-        <div className="stat-card">
-          <div className="stat-header">
-            <span className="stat-label">Market Status</span>
-            <Activity size={20} className="stat-icon" />
+        <div className="bg-dark-card border border-dark-border rounded-lg p-4 transition-all duration-300 hover:bg-dark-hover hover:border-gray-600 hover:shadow-lg hover:shadow-accent-cyan/10">
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-xs text-gray-500 uppercase tracking-wider font-semibold">Market Status</span>
+            <Activity size={20} className="text-accent-cyan" />
           </div>
-          <div className="stat-value" style={{ color: '#00d4ff' }}>
-            OPEN
-          </div>
-          <div className="stat-change">
+          <div className="text-2xl font-bold mb-2 text-accent-cyan">OPEN</div>
+          <div className="text-sm text-gray-600">
             <span>Regular Hours</span>
           </div>
         </div>
       </div>
 
       {/* Charts Section */}
-      <div className="charts-grid">
-        <div className="chart-card">
-          <div className="chart-header">
-            <h3>Price Performance</h3>
-            <div className="chart-controls">
-              <button className="time-btn active">1D</button>
-              <button className="time-btn">1W</button>
-              <button className="time-btn">1M</button>
-              <button className="time-btn">3M</button>
-              <button className="time-btn">1Y</button>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div className="bg-dark-card border border-dark-border rounded-lg p-5 transition-all duration-300 hover:bg-dark-hover hover:border-gray-600">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="m-0 text-base font-semibold">Price Performance</h3>
+            <div className="flex gap-1.5">
+              <button className="bg-transparent border border-gray-600 text-gray-500 px-2.5 py-1 rounded text-xs cursor-pointer transition-all hover:border-gray-500 hover:text-white active:bg-accent-cyan active:border-accent-cyan active:text-black active:font-semibold">1D</button>
+              <button className="bg-transparent border border-gray-600 text-gray-500 px-2.5 py-1 rounded text-xs cursor-pointer transition-all hover:border-gray-500 hover:text-white">1W</button>
+              <button className="bg-transparent border border-gray-600 text-gray-500 px-2.5 py-1 rounded text-xs cursor-pointer transition-all hover:border-gray-500 hover:text-white">1M</button>
+              <button className="bg-transparent border border-gray-600 text-gray-500 px-2.5 py-1 rounded text-xs cursor-pointer transition-all hover:border-gray-500 hover:text-white">3M</button>
+              <button className="bg-transparent border border-gray-600 text-gray-500 px-2.5 py-1 rounded text-xs cursor-pointer transition-all hover:border-gray-500 hover:text-white">1Y</button>
             </div>
           </div>
           <ResponsiveContainer width="100%" height={300}>
@@ -144,9 +141,9 @@ function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-        <div className="chart-card">
-          <div className="chart-header">
-            <h3>Trading Volume</h3>
+        <div className="bg-dark-card border border-dark-border rounded-lg p-5 transition-all duration-300 hover:bg-dark-hover hover:border-gray-600">
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="m-0 text-base font-semibold">Trading Volume</h3>
           </div>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartData}>
@@ -168,39 +165,39 @@ function Dashboard() {
       </div>
 
       {/* Stocks Table */}
-      <div className="table-card">
-        <div className="table-header">
-          <h3>Top Movers</h3>
-          <span className="table-subtitle">24-hour changes</span>
+      <div className="bg-dark-card border border-dark-border rounded-lg p-5 transition-all duration-300 hover:bg-dark-hover hover:border-gray-600">
+        <div className="mb-4 flex justify-between items-baseline">
+          <h3 className="m-0 text-base font-semibold">Top Movers</h3>
+          <span className="text-gray-500 text-xs">24-hour changes</span>
         </div>
-        <div className="table-wrapper">
-          <table className="stocks-table">
-            <thead>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse text-sm">
+            <thead className="border-b border-dark-border">
               <tr>
-                <th>Symbol</th>
-                <th>Name</th>
-                <th>Price</th>
-                <th>Change</th>
-                <th>% Change</th>
-                <th>Volume</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider bg-gray-900">Symbol</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider bg-gray-900">Name</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider bg-gray-900">Price</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider bg-gray-900">Change</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider bg-gray-900">% Change</th>
+                <th className="text-left px-4 py-3 font-semibold text-gray-500 uppercase text-xs tracking-wider bg-gray-900">Volume</th>
               </tr>
             </thead>
             <tbody>
               {stocks.map((stock) => (
-                <tr key={stock.symbol}>
-                  <td className="symbol">{stock.symbol}</td>
-                  <td>{stock.name}</td>
-                  <td className="price">${stock.price.toFixed(2)}</td>
-                  <td className={`change ${stock.change > 0 ? 'positive' : 'negative'}`}>
-                    <span className="change-icon">
+                <tr key={stock.symbol} className="border-b border-dark-border text-dark-text hover:bg-gray-800">
+                  <td className="px-4 py-3 font-semibold text-white font-mono">{stock.symbol}</td>
+                  <td className="px-4 py-3">{stock.name}</td>
+                  <td className="px-4 py-3 text-white font-medium">${stock.price.toFixed(2)}</td>
+                  <td className={`px-4 py-3 flex items-center gap-1.5 ${stock.change > 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                    <span className="flex items-center">
                       {stock.change > 0 ? <TrendingUp size={16} /> : <TrendingDown size={16} />}
                     </span>
                     ${stock.change.toFixed(2)}
                   </td>
-                  <td className={`percent ${stock.changePercent > 0 ? 'positive' : 'negative'}`}>
+                  <td className={`px-4 py-3 font-semibold ${stock.changePercent > 0 ? 'text-accent-green' : 'text-accent-red'}`}>
                     {stock.changePercent > 0 ? '+' : ''}{stock.changePercent.toFixed(2)}%
                   </td>
-                  <td className="volume">{(stock.volume / 1000000).toFixed(1)}M</td>
+                  <td className="px-4 py-3 text-gray-600 text-xs">{(stock.volume / 1000000).toFixed(1)}M</td>
                 </tr>
               ))}
             </tbody>

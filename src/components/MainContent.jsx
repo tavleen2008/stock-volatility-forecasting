@@ -1,10 +1,9 @@
 import React from 'react';
 import Dashboard from './Dashboard';
-import './MainContent.css';
 
 function MainContent() {
   return (
-    <main className="main-content">
+    <main className="flex-1 overflow-y-auto p-5 bg-dark-bg">
       <Dashboard />
     </main>
   );

@@ -1,19 +1,59 @@
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  background-color: #0f0f0f;
-  color: #ffffff;
+@import "tailwindcss";
+
+@theme {
+  --color-dark-bg: #0f0f0f;
+  --color-dark-card: #1a1a1a;
+  --color-dark-border: #2a2a2a;
+  --color-dark-hover: #222222;
+  --color-dark-input: #2a2a2a;
+  --color-dark-text: #aaaaaa;
+
+  --color-accent-cyan: #00d4ff;
+  --color-accent-blue: #0099ff;
+  --color-accent-green: #00d966;
+  --color-accent-red: #ff3366;
+
+  --spacing-4_5: 1.125rem;
+
+  --animate-fade-in: fadeIn 0.3s ease-in;
+
+  @keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+  }
 }
 
-html, body, #root {
-  width: 100%;
-  height: 100%;
+@utility border-l-3 {
+  border-left-width: 3px;
 }
 
-* {
-  box-sizing: border-box;
+@layer base {
+  body {
+    @apply bg-dark-bg text-white font-sans;
+  }
+
+  html, body, #root {
+    @apply w-full h-full;
+  }
+
+  * {
+    @apply box-border;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    @apply w-2;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-dark-border rounded;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-700;
+  }
 }

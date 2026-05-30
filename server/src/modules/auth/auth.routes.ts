@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import passport from '../../config/passport';
-import { googleCallback, me, sendVerificationCode, verifyRegistration, resendCode, login } from './auth.controller';
+import { googleCallback, me, sendVerificationCode, verifyRegistration, resendCode, login, refresh, logout } from './auth.controller';
 import { authMiddleware } from '../../middleware/auth.middleware';
 
 const router = Router();
@@ -10,6 +10,8 @@ router.post('/register/verify', verifyRegistration);
 router.post('/register/resend-code', resendCode);
 
 router.post('/login', login);
+router.post('/refresh', refresh);
+router.post('/logout', logout);
 
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 router.get('/google/callback', (req, res, next) => {

@@ -11,6 +11,7 @@ const config = {
     databaseUrl: process.env.DATABASE_URL || 'file:./dev.db',
     redisUrl: process.env.REDIS_URL || '',
     jwtAccessSecret: process.env.JWT_ACCESS_SECRET || 'change_me_access',
+    jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || 'change_me_refresh',
     googleClientId: process.env.GOOGLE_CLIENT_ID || '',
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
     googleRedirectUri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/auth/google/callback',

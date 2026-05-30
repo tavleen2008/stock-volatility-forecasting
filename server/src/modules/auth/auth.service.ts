@@ -107,17 +107,63 @@ export const loginUser = async (data: LoginInput) => {
     return user;
 };
 
-export const createJwtToken = (user: User) => {
-    return jwt.sign(
-        {
-            sub: user.id,
-            email: user.email,
-            provider: user.provider,
-            name: user.name,
-        },
-        config.jwtAccessSecret,
-        {
-            expiresIn: AUTH_CONSTANTS.JWT_EXPIRES_IN,
-        }
+export const generateTokens = async (user: User) => {
+    const payload = {
+        sub: user.id,
+        email: user.email,
+        provider: user.provider,
+        name: user.name,
+    };
+
+    const accessToken = jwt.sign(payload, config.jwtAccessSecret, {
+        expiresIn: AUTH_CONSTANTS.ACCESS_TOKEN_EXPIRES_IN,
+    });
+
+    const refreshToken = jwt.sign(payload, config.jwtRefreshSecret, {
+        expiresIn: AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRES_IN,
+    });
+
+    // Save refresh token to Redis
+    await redis.set(
+        `refresh_token:${user.id}`, 
+        refreshToken, 
+        'EX', 
+        AUTH_CONSTANTS.REFRESH_TOKEN_REDIS_TTL
     );
+
+    return { accessToken, refreshToken };
+};
+
+export const verifyAndRefresh = async (token: string) => {
+    try {
+        const decoded = jwt.verify(token, config.jwtRefreshSecret) as { sub: string };
+        const userId = decoded.sub;
+
+        // Check if token exists in Redis (meaning it hasn't been revoked/logged out)
+        const storedToken = await redis.get(`refresh_token:${userId}`);
+        if (!storedToken || storedToken !== token) {
+            throw new Error('Invalid refresh token');
+        }
+
+        const user = await prisma.user.findUnique({ where: { id: userId } });
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        return generateTokens(user);
+    } catch (error) {
+        throw new Error('Invalid or expired refresh token');
+    }
+};
+
+export const revokeRefreshToken = async (token: string) => {
+    try {
+        // Decode without verifying expiration so we can still revoke expired tokens
+        const decoded = jwt.decode(token) as { sub: string } | null;
+        if (decoded?.sub) {
+            await redis.del(`refresh_token:${decoded.sub}`);
+        }
+    } catch (error) {
+        // Ignore parsing errors, just fail silently during logout
+    }
 };

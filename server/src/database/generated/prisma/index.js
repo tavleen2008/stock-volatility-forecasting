@@ -137,7 +137,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "D:\\Web Development\\Projects\\news and sentiment analysis stock system\\code\\stock-volatility-forecasting\\server\\src\\database\\generated\\prisma",
+      "value": "C:\\Users\\mpsin\\Downloads\\stock-volatility-forecasting\\stock-volatility-forecasting\\server\\src\\database\\generated\\prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -151,7 +151,7 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "D:\\Web Development\\Projects\\news and sentiment analysis stock system\\code\\stock-volatility-forecasting\\server\\src\\database\\prisma\\schema.prisma",
+    "sourceFilePath": "C:\\Users\\mpsin\\Downloads\\stock-volatility-forecasting\\stock-volatility-forecasting\\server\\src\\database\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {

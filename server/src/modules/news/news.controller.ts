@@ -1,5 +1,12 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
+import { NewsService } from './news.service';
 
-export const fetchNews = (_req: Request, res: Response) => {
-    res.json({ articles: [] });
+export const fetchNews = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const query = (req.query.q as string) || undefined;
+        const articles = await NewsService.collect(query);
+        res.json({ articles });
+    } catch (error) {
+        next(error);
+    }
 };

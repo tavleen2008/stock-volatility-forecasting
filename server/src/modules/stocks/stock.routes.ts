@@ -1,7 +1,8 @@
 import { Router } from 'express';
-import { getStocks } from './stock.controller';
+import { getStockMetrics } from './stock.controller';
 
 const router = Router();
-router.get('/', getStocks);
+router.get('/:symbol/metrics', getStockMetrics);
+
 
 export default router;

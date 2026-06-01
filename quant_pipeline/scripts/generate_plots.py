@@ -54,7 +54,8 @@ DOCS_DIR.mkdir(parents=True, exist_ok=True)
 METRICS_PATH = REPO_ROOT / 'artifacts' / 'reports' / 'forecast_metrics.csv'
 METRICS = pd.read_csv(METRICS_PATH) if METRICS_PATH.exists() else pd.DataFrame()
 
-MODELS = ['har_forecast', 'har_sentiment_forecast', 'har_log_forecast', 'xgb_forecast', 'xgb_sentiment_forecast']
+# Exclude `har_log_forecast` from plots per checkpoint request
+MODELS = ['har_forecast', 'har_sentiment_forecast', 'xgb_forecast', 'xgb_sentiment_forecast']
 
 
 def plot_actual_vs_forecasts(df: pd.DataFrame, ticker: str):

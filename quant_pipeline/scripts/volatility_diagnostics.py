@@ -107,7 +107,7 @@ def fit_and_report(ticker: str):
     x_test_log = np.log(X_test_base[log_vars].clip(lower=eps))
     # Make sure y_train_var has positive values
     y_train_log = np.log(y_train_var.clip(lower=eps))
-    log_model = HARModel(use_sentiment=False, estimator='linear')
+    log_model = HARModel(use_sentiment=False, estimator='linear', clip_predictions=False)
     log_model.fit(x_train_log, y_train_log)
     pred_log = log_model.predict(x_test_log)
     # back-transform to variance and then to volatility (annualized)

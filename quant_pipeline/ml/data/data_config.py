@@ -38,6 +38,8 @@ class DataConfig(BaseSettings):
     forecast_horizon: int = Field(default=1, ge=1, le=30)
     random_seed: int = Field(default=42)
     finbert_model_name: str = Field(default="ProsusAI/finbert")
+    # When true and real sentiment is missing/constant, inject small synthetic sentiment noise for testing
+    synthetic_sentiment: bool = Field(default=False)
 
     @field_validator("tickers", mode="before")
     @classmethod

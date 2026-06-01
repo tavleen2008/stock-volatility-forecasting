@@ -20,10 +20,12 @@ class HARModel:
         estimator: Literal["linear", "ridge"] = "linear",
         ridge_alpha: float = 1.0,
         feature_columns: list[str] | None = None,
+        clip_predictions: bool = True,
     ) -> None:
         self.use_sentiment = use_sentiment
         self.estimator_name = estimator
         self.ridge_alpha = ridge_alpha
+        self.clip_predictions = clip_predictions
         # allow custom feature columns; default to classic HAR lags
         self.feature_columns = feature_columns if feature_columns is not None else ["rv_daily", "rv_weekly", "rv_monthly"]
         self.sentiment_columns = [
@@ -53,9 +55,10 @@ class HARModel:
             raise ValueError(f"Missing HAR feature columns in x_test: {missing}")
         pred = self.model.predict(x_test[self.feature_columns])
         logger.info("HAR prediction completed", extra={"rows": len(x_test)})
-        # Volatility cannot be negative — clip predictions at zero for safety
-        import numpy as _np
-        pred = _np.maximum(pred, 0.0)
+        # Optionally clip negative predictions at zero (safe for volatility-domain outputs)
+        if self.clip_predictions:
+            import numpy as _np
+            pred = _np.maximum(pred, 0.0)
         return pd.Series(pred, index=x_test.index, name="prediction")
 
     def save(self, path: str | Path) -> None:
@@ -67,6 +70,7 @@ class HARModel:
                 "estimator": self.estimator_name,
                 "ridge_alpha": self.ridge_alpha,
                 "feature_columns": self.feature_columns,
+                "clip_predictions": self.clip_predictions,
             },
             path,
         )
@@ -79,6 +83,7 @@ class HARModel:
             use_sentiment=payload["use_sentiment"],
             estimator=payload["estimator"],
             ridge_alpha=payload["ridge_alpha"],
+            clip_predictions=payload.get("clip_predictions", True),
         )
         model.model = payload["model"]
         model.feature_columns = payload["feature_columns"]

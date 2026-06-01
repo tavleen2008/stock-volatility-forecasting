@@ -43,7 +43,7 @@ def plot_ticker_side_by_side(ticker: str, forecast_dir: Path, plot_dir: Path) ->
     # Left: raw forecasts
     ax = axes[0]
     ax.plot(x, actual, label='Actual', linewidth=2, color='tab:blue')
-    for col in ['har_forecast', 'har_sentiment_forecast', 'har_log_forecast', 'xgb_forecast', 'xgb_sentiment_forecast']:
+    for col in ['har_forecast', 'har_sentiment_forecast', 'xgb_forecast', 'xgb_sentiment_forecast']:
         if f'{col}_raw' in merged.columns:
             ax.plot(x, merged[f'{col}_raw'], label=col, linewidth=1)
     ax.set_title(f'{ticker} — Raw forecasts')
@@ -58,7 +58,6 @@ def plot_ticker_side_by_side(ticker: str, forecast_dir: Path, plot_dir: Path) ->
     mapping = {
         'har_forecast_log1p': 'har_log1p',
         'har_sentiment_forecast_log1p': 'har_sent1p',
-        'har_log_forecast': 'har_log_forecast',
         'xgb_forecast_log1p': 'xgb_log1p',
         'xgb_sentiment_forecast_log1p': 'xgb_sent_log1p',
     }

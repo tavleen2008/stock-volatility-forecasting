@@ -10,3 +10,7 @@ Auto-generated analysis for TSLA.
 
 ![Volatility Distribution](..\..\..\artifacts\plots\TSLA_volatility_hist.png)
 
+## HAR Feature Importance
+
+![HAR Feature Importance](..\..\..\artifacts\plots\TSLA_har_feature_importance.png)
+

@@ -10,3 +10,7 @@ Auto-generated analysis for AAPL.
 
 ![Volatility Distribution](..\..\..\artifacts\plots\AAPL_volatility_hist.png)
 
+## HAR Feature Importance
+
+![HAR Feature Importance](..\..\..\artifacts\plots\AAPL_har_feature_importance.png)
+

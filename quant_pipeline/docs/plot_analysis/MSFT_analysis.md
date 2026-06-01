@@ -10,3 +10,7 @@ Auto-generated analysis for MSFT.
 
 ![Volatility Distribution](..\..\..\artifacts\plots\MSFT_volatility_hist.png)
 
+## HAR Feature Importance
+
+![HAR Feature Importance](..\..\..\artifacts\plots\MSFT_har_feature_importance.png)
+

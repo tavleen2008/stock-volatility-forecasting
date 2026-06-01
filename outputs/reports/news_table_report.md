@@ -1,0 +1,1 @@
+No candidate news tables found.

@@ -103,7 +103,8 @@ def run_log1p_pipeline():
         y_train = np.log1p(y_train_raw)
 
         # --- HAR (linear) trained on log1p target
-        har = HARModel(use_sentiment=False, estimator="linear", feature_columns=base_features)
+        # disable clipping because model is trained in transformed (log1p) domain
+        har = HARModel(use_sentiment=False, estimator="linear", feature_columns=base_features, clip_predictions=False)
         har.fit(x_train_base_scaled, y_train)
         pred_log = har.predict(x_test_base_scaled)
         # back-transform
@@ -113,7 +114,8 @@ def run_log1p_pipeline():
 
         # --- HAR + Sentiment
         # decide whether to use sentiment (here sentiment frame empty, so fallback to base predictions)
-        sent_model = HARModel(use_sentiment=True, estimator="ridge", ridge_alpha=1.0, feature_columns=base_features + sentiment_features)
+        # HAR + Sentiment (trained in log1p domain) - disable clipping
+        sent_model = HARModel(use_sentiment=True, estimator="ridge", ridge_alpha=1.0, feature_columns=base_features + sentiment_features, clip_predictions=False)
         try:
             sent_var = x_train_sent[sentiment_features].var(numeric_only=True)
             if sent_var.isnull().all() or (sent_var.fillna(0.0) <= 1e-12).all():
@@ -132,7 +134,7 @@ def run_log1p_pipeline():
         x_train_log = np.log(train[log_vars].clip(lower=eps))
         x_test_log = np.log(test[log_vars].clip(lower=eps))
         y_train_var_log = np.log(train["future_realized_variance"].clip(lower=eps))
-        log_model = HARModel(use_sentiment=False, estimator="linear", feature_columns=log_vars)
+        log_model = HARModel(use_sentiment=False, estimator="linear", feature_columns=log_vars, clip_predictions=False)
         log_model.fit(x_train_log, y_train_var_log)
         pred_logvar = log_model.predict(x_test_log)
         pred_var = np.exp(pred_logvar.clip(lower=np.log(eps)))
@@ -140,7 +142,8 @@ def run_log1p_pipeline():
         log_metrics = metric_summary(y_test_raw, pred_vol_from_log)
 
         # --- XGBoost baseline on log1p target
-        xgb = XGBBaseline()
+        # XGBoost trained on log1p target: disable clipping in the wrapper
+        xgb = XGBBaseline(clip_predictions=False)
         try:
             xgb.fit(x_train_base_scaled, y_train)
             xgb_log = xgb.predict(x_test_base_scaled)
@@ -153,7 +156,7 @@ def run_log1p_pipeline():
         # XGB + sentiment (fallback to xgb_pred_vol)
         try:
             if x_train_sent_scaled.shape[1] > x_train_base_scaled.shape[1]:
-                xgb_sent = XGBBaseline()
+                xgb_sent = XGBBaseline(clip_predictions=False)
                 xgb_sent.fit(x_train_sent_scaled, y_train)
                 xgb_sent_log = xgb_sent.predict(x_test_sent_scaled)
                 xgb_sent_vol = pd.Series(np.expm1(xgb_sent_log.clip(lower=np.log1p(eps))), index=xgb_sent_log.index).clip(lower=0.0)
@@ -188,10 +191,10 @@ def run_log1p_pipeline():
         from matplotlib.dates import AutoDateLocator, DateFormatter
 
         x_axis = pd.to_datetime(test["date"]).values
+        # Exclude `har_log_forecast` from plotted series per checkpoint request
         preds_df = pd.DataFrame({
             "har_log1p": pred_vol.values,
             "har_sent1p": sent_pred_vol.values,
-            "har_log_forecast": pred_vol_from_log.values,
             "xgb_log1p": xgb_pred_vol.values,
             "xgb_sent_log1p": xgb_sent_vol.values,
         }, index=x_axis)

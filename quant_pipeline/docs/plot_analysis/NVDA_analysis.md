@@ -10,3 +10,7 @@ Auto-generated analysis for NVDA.
 
 ![Volatility Distribution](..\..\..\artifacts\plots\NVDA_volatility_hist.png)
 
+## HAR Feature Importance
+
+![HAR Feature Importance](..\..\..\artifacts\plots\NVDA_har_feature_importance.png)
+

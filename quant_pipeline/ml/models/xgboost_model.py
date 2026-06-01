@@ -18,10 +18,20 @@ from sklearn.ensemble import HistGradientBoostingRegressor
 
 
 class XGBBaseline:
-    """Train a boosted-tree regressor. Tries XGBoost first, otherwise falls back to sklearn's HistGradientBoostingRegressor."""
+    """Train a boosted-tree regressor. Tries XGBoost first, otherwise falls back to sklearn's HistGradientBoostingRegressor.
 
-    def __init__(self, params: Optional[dict] = None):
-        self.params = params or {"n_estimators": 200, "learning_rate": 0.05, "max_depth": 3}
+    Parameters
+    ----------
+    params: Optional[dict]
+        Model hyperparameters to pass to the underlying estimator.
+    clip_predictions: bool
+        If True, clip negative predictions to zero. Disable when the model is trained in a transformed domain (e.g. log or log1p).
+    """
+
+    def __init__(self, params: Optional[dict] = None, clip_predictions: bool = True):
+        # Use stronger defaults to improve baseline performance
+        self.params = params or {"n_estimators": 400, "learning_rate": 0.1, "max_depth": 5}
+        self.clip_predictions = clip_predictions
         if _HAS_XGB:
             self.model = XGBRegressor(**self.params)
             logger.info("Using XGBoost for baseline")
@@ -35,9 +45,9 @@ class XGBBaseline:
 
     def predict(self, X: pd.DataFrame) -> pd.Series:
         preds = self.model.predict(X)
-        # Ensure no negative volatility predictions (clip to zero)
-        import numpy as _np
-        preds = _np.maximum(preds, 0.0)
+        if self.clip_predictions:
+            import numpy as _np
+            preds = _np.maximum(preds, 0.0)
         return pd.Series(preds, index=X.index)
 
 

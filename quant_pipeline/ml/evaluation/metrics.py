@@ -48,6 +48,7 @@ def directional_accuracy(y_true: pd.Series, y_pred: pd.Series) -> float:
 def qlike_loss(y_true: pd.Series, y_pred: pd.Series, eps: float = 1e-8) -> float:
     _validate_series(y_true, y_pred)
     y_t = y_true.clip(lower=eps)
+    # QLIKE is undefined for non-positive forecasts; clip forecasts before evaluation.
     y_p = y_pred.clip(lower=eps)
     return float(np.mean(np.log(y_p) + (y_t / y_p)))
 

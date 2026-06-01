@@ -1,0 +1,157 @@
+@import "tailwindcss";
+
+@theme {
+  /* ── Light theme surface tokens ───────────────────────────── */
+  --color-dark-bg:        #f4f6f9;
+  --color-dark-card:      #ffffff;
+  --color-dark-border:    #e2e8f0;
+  --color-dark-hover:     #f1f5f9;
+  --color-dark-input:     #ffffff;
+  --color-dark-text:      #64748b;
+  --color-dark-sidebar:   #ffffff;
+
+  /* ── Brand / Accent: Sentivvo Green ───────────────────────── */
+  --color-accent-primary:   #006d35;   /* Sentivvo Green - primary CTA / icons */
+  --color-accent-secondary: #005628;   /* Darker Green - hover / pressed       */
+  --color-accent-light:     #e8f5e9;   /* Softer green - soft badge / fill     */
+  --color-accent-cyan:      #006d35;   /* alias → primary (legacy compat)     */
+  --color-accent-blue:      #005628;   /* alias → secondary (legacy compat)   */
+  --color-accent-green:     #00e676;   /* Bright Green   – positive / up       */
+  --color-accent-red:       #ef4444;   /* red-500     – negative / down       */
+  --color-accent-amber:     #f59e0b;   /* amber-400   – neutral highlight     */
+
+  /* ── Override default green and emerald scales ──────────────── */
+  --color-green-50:         #e8f5e9;
+  --color-green-100:        #c8e6c9;
+  --color-green-200:        #a5d6a7;
+  --color-green-300:        #81c784;
+  --color-green-400:        #66bb6a;
+  --color-green-500:        #4caf50;
+  --color-green-600:        #006d35;
+  --color-green-700:        #005628;
+  --color-green-800:        #00401c;
+  --color-green-900:        #002d10;
+
+  --color-emerald-50:       #e8f5e9;
+  --color-emerald-100:      #c8e6c9;
+  --color-emerald-200:      #a5d6a7;
+  --color-emerald-300:      #81c784;
+  --color-emerald-400:      #66bb6a;
+  --color-emerald-500:      #006d35;
+  --color-emerald-600:      #005628;
+  --color-emerald-700:      #00401c;
+  --color-emerald-800:      #00401c;
+  --color-emerald-900:      #002d10;
+
+  /* ── Spacing extras ────────────────────────────────────────── */
+  --spacing-4_5: 1.125rem;
+
+  /* ── Animations ────────────────────────────────────────────── */
+  --animate-fade-in:    fadeIn 0.35s ease-out;
+  --animate-slide-up:   slideUp 0.4s ease-out;
+  --animate-pulse-soft: pulseSoft 2s ease-in-out infinite;
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pulseSoft {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.55; }
+  }
+}
+
+/* ── Custom utilities ─────────────────────────────────────────── */
+@utility border-l-3 {
+  border-left-width: 3px;
+}
+
+@utility text-gradient-teal {
+  background: linear-gradient(135deg, #006d35 0%, #00e676 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Base layer ───────────────────────────────────────────────── */
+@layer base {
+  html, body, #root {
+    @apply w-full h-full;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  body {
+    @apply bg-dark-bg text-slate-800 antialiased;
+  }
+
+  * {
+    @apply box-border;
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar       { width: 6px; height: 6px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+  /* Focus ring */
+  *:focus-visible {
+    outline: 2px solid #006d35;
+    outline-offset: 2px;
+  }
+
+  /* Smooth transitions on interactive elements */
+  button, a, input, select {
+    transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+    transition-duration: 150ms;
+    transition-timing-function: ease;
+  }
+}
+
+/* ── Global animation helper classes ─────────────────────────── */
+.animate-fade-in  { animation: fadeIn 0.35s ease-out; }
+.animate-slide-up { animation: slideUp 0.4s ease-out; }
+
+/* ── Card hover lift ──────────────────────────────────────────── */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0, 109, 53, 0.10);
+}
+
+/* ── Gradient button ──────────────────────────────────────────── */
+.btn-teal {
+  background: linear-gradient(135deg, #006d35 0%, #00e676 100%);
+  color: #fff;
+  font-weight: 600;
+  border-radius: 0.75rem;
+  padding: 0.625rem 1.25rem;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 109, 53, 0.3);
+}
+.btn-teal:hover {
+  background: linear-gradient(135deg, #005628 0%, #00b050 100%);
+  box-shadow: 0 6px 20px rgba(0, 109, 53, 0.4);
+  transform: translateY(-1px);
+}
+
+/* ── Ticker animation (Landing page) ─────────────────────────── */
+@keyframes ticker {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.animate-ticker {
+  animation: ticker 30s linear infinite;
+}

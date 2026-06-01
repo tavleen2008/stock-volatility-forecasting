@@ -36,70 +36,48 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.me = exports.verifyEmail = exports.googleCallback = exports.login = exports.register = void 0;
-const passport_1 = __importDefault(require("../../config/passport"));
+exports.logout = exports.refresh = exports.login = exports.resendCode = exports.verifyRegistration = exports.sendVerificationCode = exports.me = exports.googleCallback = void 0;
+const zod_1 = require("zod");
 const authService = __importStar(require("./auth.service"));
-const prisma_1 = require("../../config/prisma");
 const env_1 = __importDefault(require("../../config/env"));
+const auth_schemas_1 = require("./auth.schemas");
+/**
+ * Strips internal/sensitive fields from the User object before sending to client.
+ */
 const sanitizeUser = (user) => {
-    const { passwordHash, ...rest } = user;
+    const { password, ...rest } = user;
     return rest;
 };
-const register = async (req, res, next) => {
-    try {
-        const { email, password, name } = req.body;
-        if (!email || !password) {
-            return res.status(400).json({ message: 'Email and password are required' });
-        }
-        const existingUser = await authService.findUserByEmail(email);
-        if (existingUser) {
-            return res.status(409).json({ message: 'Email is already registered' });
-        }
-        const user = await authService.createLocalUser({ email, password, name });
-        const token = authService.createJwtToken(user);
-        const emailVerificationToken = authService.createEmailVerificationToken(user);
-        return res.status(201).json({
-            user: sanitizeUser(user),
-            token,
-            emailVerificationToken,
-            message: 'Account created. Verify your email using the verification token.',
-        });
-    }
-    catch (error) {
-        return next(error);
-    }
+/**
+ * Helper to set the refresh token as an HttpOnly cookie
+ */
+const setRefreshTokenCookie = (res, refreshToken) => {
+    res.cookie('refreshToken', refreshToken, {
+        httpOnly: true,
+        secure: env_1.default.nodeEnv === 'production',
+        sameSite: 'strict',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+    });
 };
-exports.register = register;
-const login = (req, res, next) => {
-    passport_1.default.authenticate('local', { session: false }, (err, user, info) => {
-        if (err) {
-            return next(err);
-        }
-        if (!user) {
-            return res.status(401).json({ message: info?.message || 'Invalid credentials' });
-        }
-        const token = authService.createJwtToken(user);
-        return res.json({
-            user: sanitizeUser(user),
-            token,
-        });
-    })(req, res, next);
-};
-exports.login = login;
 const googleCallback = async (req, res, next) => {
     try {
         const user = req.user;
         if (!user) {
             return res.status(401).json({ message: 'Authentication failed' });
         }
-        const token = authService.createJwtToken(user);
+        const { accessToken, refreshToken } = await authService.generateTokens(user);
+        // We can't easily set cookies on a redirect if the frontend is on a different domain,
+        // but for local dev with same domain it works. For production OAuth, usually you redirect
+        // with a short-lived one-time code to exchange for tokens on the frontend.
+        // For simplicity here, we'll set the cookie and redirect with access token.
+        setRefreshTokenCookie(res, refreshToken);
         if (env_1.default.frontendUrl) {
-            const redirectUrl = `${env_1.default.frontendUrl.replace(/\/$/, '')}/auth/success?token=${encodeURIComponent(token)}`;
+            const redirectUrl = `${env_1.default.frontendUrl.replace(/\/$/, '')}/auth/success?token=${encodeURIComponent(accessToken)}`;
             return res.redirect(redirectUrl);
         }
         return res.json({
             user: sanitizeUser(user),
-            token,
+            token: accessToken,
         });
     }
     catch (error) {
@@ -107,30 +85,6 @@ const googleCallback = async (req, res, next) => {
     }
 };
 exports.googleCallback = googleCallback;
-const verifyEmail = async (req, res, next) => {
-    try {
-        const token = String(req.query.token || '');
-        if (!token) {
-            return res.status(400).json({ message: 'Verification token is required' });
-        }
-        const payload = authService.verifyEmailToken(token);
-        const user = await prisma_1.prisma.user.findUnique({ where: { id: payload.sub } });
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-        const updated = await prisma_1.prisma.user.update({
-            where: { id: user.id },
-            data: {
-                isVerified: true,
-            },
-        });
-        return res.json({ message: 'Email verified', user: sanitizeUser(updated) });
-    }
-    catch (error) {
-        return res.status(400).json({ message: 'Invalid or expired token' });
-    }
-};
-exports.verifyEmail = verifyEmail;
 const me = async (req, res) => {
     if (!req.user) {
         return res.status(401).json({ message: 'Not authenticated' });
@@ -138,3 +92,122 @@ const me = async (req, res) => {
     return res.json({ user: sanitizeUser(req.user) });
 };
 exports.me = me;
+const sendVerificationCode = async (req, res, next) => {
+    try {
+        const data = auth_schemas_1.registerSchema.parse(req.body);
+        await authService.sendVerificationCode(data);
+        return res.status(200).json({
+            message: 'Verification code sent successfully. Please check your email.',
+        });
+    }
+    catch (error) {
+        if (error instanceof zod_1.z.ZodError) {
+            return res.status(400).json({ message: 'Validation failed', errors: error.errors });
+        }
+        if (error instanceof Error && error.message === 'User already exists') {
+            return res.status(409).json({ message: error.message });
+        }
+        return next(error);
+    }
+};
+exports.sendVerificationCode = sendVerificationCode;
+const verifyRegistration = async (req, res, next) => {
+    try {
+        const data = auth_schemas_1.verifyEmailSchema.parse(req.body);
+        const user = await authService.verifyCodeAndRegister(data);
+        const { accessToken, refreshToken } = await authService.generateTokens(user);
+        setRefreshTokenCookie(res, refreshToken);
+        return res.status(201).json({
+            message: 'User verified and registered successfully.',
+            user: sanitizeUser(user),
+            token: accessToken,
+        });
+    }
+    catch (error) {
+        if (error instanceof zod_1.z.ZodError) {
+            return res.status(400).json({ message: 'Validation failed', errors: error.errors });
+        }
+        if (error instanceof Error && (error.message === 'Invalid verification code' || error.message === 'Verification code expired or invalid email')) {
+            return res.status(400).json({ message: error.message });
+        }
+        return next(error);
+    }
+};
+exports.verifyRegistration = verifyRegistration;
+const resendCode = async (req, res, next) => {
+    try {
+        const data = auth_schemas_1.resendCodeSchema.parse(req.body);
+        await authService.resendVerificationCode(data);
+        return res.status(200).json({
+            message: 'A new verification code has been sent to your email.',
+        });
+    }
+    catch (error) {
+        if (error instanceof zod_1.z.ZodError) {
+            return res.status(400).json({ message: 'Validation failed', errors: error.errors });
+        }
+        if (error instanceof Error && error.message.includes('No pending registration')) {
+            return res.status(404).json({ message: error.message });
+        }
+        return next(error);
+    }
+};
+exports.resendCode = resendCode;
+const login = async (req, res, next) => {
+    try {
+        const data = auth_schemas_1.loginSchema.parse(req.body);
+        const user = await authService.loginUser(data);
+        const { accessToken, refreshToken } = await authService.generateTokens(user);
+        setRefreshTokenCookie(res, refreshToken);
+        return res.json({
+            user: sanitizeUser(user),
+            token: accessToken,
+        });
+    }
+    catch (error) {
+        if (error instanceof zod_1.z.ZodError) {
+            return res.status(400).json({ message: 'Validation failed', errors: error.errors });
+        }
+        if (error instanceof Error && error.message === 'Invalid credentials') {
+            return res.status(401).json({ message: error.message });
+        }
+        if (error instanceof Error && error.message === 'Please verify your email before logging in.') {
+            return res.status(403).json({ message: error.message });
+        }
+        return next(error);
+    }
+};
+exports.login = login;
+const refresh = async (req, res, next) => {
+    try {
+        const { refreshToken } = req.cookies;
+        if (!refreshToken) {
+            return res.status(401).json({ message: 'No refresh token provided' });
+        }
+        const tokens = await authService.verifyAndRefresh(refreshToken);
+        setRefreshTokenCookie(res, tokens.refreshToken);
+        return res.json({
+            token: tokens.accessToken,
+        });
+    }
+    catch (error) {
+        // Clear cookie if refresh fails
+        res.clearCookie('refreshToken');
+        return res.status(401).json({ message: 'Invalid or expired refresh token' });
+    }
+};
+exports.refresh = refresh;
+const logout = async (req, res, next) => {
+    try {
+        const { refreshToken } = req.cookies;
+        if (refreshToken) {
+            await authService.revokeRefreshToken(refreshToken);
+        }
+        res.clearCookie('refreshToken');
+        return res.status(200).json({ message: 'Logged out successfully' });
+    }
+    catch (error) {
+        return next(error);
+    }
+};
+exports.logout = logout;

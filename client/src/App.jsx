@@ -1,52 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './context/AuthContext';
-import Sidebar from './components/Sidebar';
-import Header from './components/Header';
-import MainContent from './components/MainContent';
+import Landing from './pages/Landing';
+import Login from './pages/Login';
+import Signup from './pages/Signup';
+import DashboardPage from './pages/DashboardPage';
+import ProtectedRoute from './components/ProtectedRoute';
 import AuthSuccess from './pages/AuthSuccess';
-
-function Layout() {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [isDarkMode, setIsDarkMode] = useState(() => {
-    const saved = localStorage.getItem('theme-mode');
-    return saved ? JSON.parse(saved) : true;
-  });
-
-  useEffect(() => {
-    localStorage.setItem('theme-mode', JSON.stringify(isDarkMode));
-  }, [isDarkMode]);
-
-  const handleToggleTheme = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDarkMode(!isDarkMode);
-  };
-
-  return (
-    <div className={`flex h-screen transition-colors duration-300 ${isDarkMode ? 'bg-dark-bg text-white' : 'bg-gray-50 text-gray-900'}`}>
-      <Sidebar isOpen={sidebarOpen} isDarkMode={isDarkMode} />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Header
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
-          isDarkMode={isDarkMode}
-          onToggleTheme={handleToggleTheme}
-        />
-        <MainContent isDarkMode={isDarkMode} />
-      </div>
-    </div>
-  );
-}
 
 function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/auth/success" element={<AuthSuccess />} />
-          <Route path="/*" element={<Layout />} />
-        </Routes>
-      </AuthProvider>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/signup" element={<Signup />} />
+        <Route path="/auth/success" element={<AuthSuccess />} />
+
+        {/* Protected dashboard — all sub-paths */}
+        <Route
+          path="/dashboard/*"
+          element={
+            <ProtectedRoute>
+              <DashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Legacy: redirect /portfolio, /forecasts etc to dashboard sub-routes */}
+        <Route path="/portfolio" element={
+          <ProtectedRoute><DashboardPage /></ProtectedRoute>
+        } />
+        <Route path="/forecasts" element={
+          <ProtectedRoute><DashboardPage /></ProtectedRoute>
+        } />
+
+        {/* Catch-all → landing */}
+        <Route path="*" element={<Landing />} />
+      </Routes>
     </BrowserRouter>
   );
 }

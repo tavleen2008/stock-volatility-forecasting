@@ -5,10 +5,17 @@ if (process.env.NODE_ENV !== 'production') {
     dotenv.config();
 }
 
+let rawDatabaseUrl = process.env.DATABASE_URL || 'file:./dev.db';
+if (process.env.RUNNING_IN_DOCKER === 'true') {
+    rawDatabaseUrl = rawDatabaseUrl
+        .replace('localhost', 'host.docker.internal')
+        .replace('127.0.0.1', 'host.docker.internal');
+}
+
 const config = {
     port: process.env.PORT ? Number(process.env.PORT) : 3000,
     nodeEnv: process.env.NODE_ENV || 'development',
-    databaseUrl: process.env.DATABASE_URL || 'file:./dev.db',
+    databaseUrl: rawDatabaseUrl,
     redisUrl: process.env.REDIS_URL || '',
     jwtAccessSecret: process.env.JWT_ACCESS_SECRET || 'change_me_access',
     jwtRefreshSecret: process.env.JWT_REFRESH_SECRET || 'change_me_refresh',

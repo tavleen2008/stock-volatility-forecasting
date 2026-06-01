@@ -20,6 +20,9 @@ services:
       - ./server/.env
     environment:
       - REDIS_URL=redis://redis:6379
+      - RUNNING_IN_DOCKER=true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - redis
 

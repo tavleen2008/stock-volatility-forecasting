@@ -9,6 +9,10 @@ router.post('/register/send-code', sendVerificationCode);
 router.post('/register/verify', verifyRegistration);
 router.post('/register/resend-code', resendCode);
 
+// Client-facing aliases directly under /api/auth
+router.post('/send-code', sendVerificationCode);
+router.post('/verify', verifyRegistration);
+
 router.post('/login', login);
 router.post('/refresh', refresh);
 router.post('/logout', logout);

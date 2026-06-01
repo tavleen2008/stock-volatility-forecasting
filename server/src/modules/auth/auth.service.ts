@@ -5,7 +5,7 @@ import { prisma } from '../../config/prisma';
 import config from '../../config/env';
 import { AUTH_CONSTANTS } from './auth.constants';
 import { RegisterInput, LoginInput, VerifyEmailInput, ResendCodeInput } from './auth.schemas';
-import { redis } from '../../config/redis';
+import { safeGet, safeSet, safeDel } from '../../config/redis';
 import { sendVerificationEmail } from '../../utils/email.service';
 
 export type User = NonNullable<Awaited<ReturnType<typeof prisma.user.findUnique>>>;
@@ -33,14 +33,14 @@ export const sendVerificationCode = async (data: RegisterInput) => {
         code,
     };
 
-    await redis.set(`pending_user:${data.email}`, JSON.stringify(pendingUser), 'EX', CODE_EXPIRY_SECONDS);
+    await safeSet(`pending_user:${data.email}`, JSON.stringify(pendingUser), 'EX', CODE_EXPIRY_SECONDS);
 
     // Send the email
     await sendVerificationEmail(data.email, code);
 };
 
 export const verifyCodeAndRegister = async (data: VerifyEmailInput) => {
-    const pendingUserStr = await redis.get(`pending_user:${data.email}`);
+    const pendingUserStr = await safeGet(`pending_user:${data.email}`);
     if (!pendingUserStr) {
         throw new Error('Verification code expired or invalid email');
     }
@@ -63,13 +63,13 @@ export const verifyCodeAndRegister = async (data: VerifyEmailInput) => {
     });
 
     // Clean up Redis
-    await redis.del(`pending_user:${data.email}`);
+    await safeDel(`pending_user:${data.email}`);
 
     return user;
 };
 
 export const resendVerificationCode = async (data: ResendCodeInput) => {
-    const pendingUserStr = await redis.get(`pending_user:${data.email}`);
+    const pendingUserStr = await safeGet(`pending_user:${data.email}`);
     if (!pendingUserStr) {
         throw new Error('No pending registration found for this email. Please register again.');
     }
@@ -79,7 +79,7 @@ export const resendVerificationCode = async (data: ResendCodeInput) => {
     pendingUser.code = code;
 
     // Update Redis with new code and reset expiry
-    await redis.set(`pending_user:${data.email}`, JSON.stringify(pendingUser), 'EX', CODE_EXPIRY_SECONDS);
+    await safeSet(`pending_user:${data.email}`, JSON.stringify(pendingUser), 'EX', CODE_EXPIRY_SECONDS);
 
     // Send the new email
     await sendVerificationEmail(data.email, code);
@@ -124,7 +124,7 @@ export const generateTokens = async (user: User) => {
     });
 
     // Save refresh token to Redis
-    await redis.set(
+    await safeSet(
         `refresh_token:${user.id}`, 
         refreshToken, 
         'EX', 
@@ -140,7 +140,7 @@ export const verifyAndRefresh = async (token: string) => {
         const userId = decoded.sub;
 
         // Check if token exists in Redis (meaning it hasn't been revoked/logged out)
-        const storedToken = await redis.get(`refresh_token:${userId}`);
+        const storedToken = await safeGet(`refresh_token:${userId}`);
         if (!storedToken || storedToken !== token) {
             throw new Error('Invalid refresh token');
         }
@@ -161,7 +161,7 @@ export const revokeRefreshToken = async (token: string) => {
         // Decode without verifying expiration so we can still revoke expired tokens
         const decoded = jwt.decode(token) as { sub: string } | null;
         if (decoded?.sub) {
-            await redis.del(`refresh_token:${decoded.sub}`);
+            await safeDel(`refresh_token:${decoded.sub}`);
         }
     } catch (error) {
         // Ignore parsing errors, just fail silently during logout

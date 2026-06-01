@@ -32,6 +32,7 @@ RUN npm ci --omit=dev
 
 # Copy generated Prisma Client
 COPY --from=builder /app/src/database/generated/prisma ./src/database/generated/prisma
+COPY --from=builder /app/src/database/generated/prisma ./dist/database/generated/prisma
 # Also copy schema in case it's needed by prisma runtime
 COPY --from=builder /app/src/database/prisma ./src/database/prisma
 

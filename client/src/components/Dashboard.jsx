@@ -6,6 +6,8 @@ import {
 import { TrendingUp, TrendingDown, DollarSign, Activity, RefreshCw } from 'lucide-react';
 import { stocksApi } from '../utils/api';
 
+import { TRACKED_SYMBOLS } from '../utils/constants';
+
 const RANGE_OPTIONS = ['1d', '5d', '1mo', '3mo', '1y'];
 
 function StatCard({ label, value, sub, subColor, icon: Icon }) {
@@ -26,7 +28,7 @@ function StatCard({ label, value, sub, subColor, icon: Icon }) {
 function Dashboard({ isDarkMode = false }) {
   const [stocks, setStocks]               = useState([]);
   const [history, setHistory]             = useState([]);
-  const [selectedSymbol, setSelectedSymbol] = useState('AAPL');
+  const [selectedSymbol, setSelectedSymbol] = useState(TRACKED_SYMBOLS[0]);
   const [range, setRange]                 = useState('1mo');
   const [loading, setLoading]             = useState(true);
   const [histLoading, setHistLoading]     = useState(false);
@@ -65,7 +67,7 @@ function Dashboard({ isDarkMode = false }) {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-0.5">Today's Markets</h1>
-          <p className="text-sm text-gray-500">Live data · AAPL · NVDA · TSLA · MSFT</p>
+          <p className="text-sm text-gray-500">Live data · {TRACKED_SYMBOLS.join(' · ')}</p>
         </div>
         <button
           onClick={loadStocks}

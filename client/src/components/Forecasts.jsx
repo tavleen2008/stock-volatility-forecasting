@@ -6,7 +6,7 @@ import {
 import { AlertTriangle, RefreshCw, TrendingUp, TrendingDown, Activity, BarChart2 } from 'lucide-react';
 import { forecastApi } from '../utils/api';
 
-const DEFAULT_SYMBOLS = ['AAPL', 'NVDA', 'TSLA', 'MSFT'];
+import { TRACKED_SYMBOLS } from '../utils/constants';
 
 const SIGNAL_CONFIG = {
   bullish: {
@@ -113,7 +113,7 @@ function Forecasts({ isDarkMode = false }) {
 
       {/* Quick-pick chips */}
       <div className="flex flex-wrap gap-2">
-        {DEFAULT_SYMBOLS.map((s) => (
+        {TRACKED_SYMBOLS.map((s) => (
           <button
             key={s}
             onClick={() => { setSymbol(s); setInputSymbol(s); }}

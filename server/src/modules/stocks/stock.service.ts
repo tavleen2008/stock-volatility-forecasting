@@ -1,22 +1,10 @@
 import YahooFinance from "yahoo-finance2";
-import { StockMetricsResponse } from "./stock.schemas";
+import { StockMetricsResponse, StockDashboardResponse } from "./stock.types";
 import { safeGet, safeSetex } from "../../config/redis";
 import { fetchNewsForSymbolFromDb } from "../news/news.service";
-import { StockDashboardResponse } from "./stock.types";
+import { TRACKED_SYMBOLS } from "./stock.constants";
 
 const yahooFinance = new YahooFinance();
-
-// The tracked universe shown on the dashboard
-const TRACKED_SYMBOLS = [
-    { symbol: 'AAPL',  name: 'Apple Inc.' },
-    { symbol: 'NVDA',  name: 'NVIDIA Corporation' },
-    { symbol: 'TSLA',  name: 'Tesla, Inc.' },
-    { symbol: 'MSFT',  name: 'Microsoft Corporation' },
-    { symbol: 'GOOGL', name: 'Alphabet Inc.' },
-    { symbol: 'AMZN',  name: 'Amazon.com, Inc.' },
-    { symbol: 'META',  name: 'Meta Platforms, Inc.' },
-    { symbol: 'JPM',   name: 'JPMorgan Chase & Co.' },
-];
 
 // ────────────────────────────────────────────────────
 //  Individual stock metrics
@@ -126,12 +114,14 @@ export const fetchStockHistory = async (symbol: string, range: string = '1mo') =
         if (cached) return JSON.parse(cached);
 
         const params = RANGE_TO_PARAMS[range] || RANGE_TO_PARAMS['1mo'];
-        const result: any[] = await yahooFinance.historical(symbol, {
+        const result: any = await yahooFinance.chart(symbol, {
             period1: params.period1,
             interval: params.interval,
         });
 
-        const history = result.map((d: any) => ({
+        const quotes = result.quotes || [];
+
+        const history = quotes.map((d: any) => ({
             date: d.date instanceof Date ? d.date.toISOString().split('T')[0] : String(d.date),
             open: +(d.open ?? 0).toFixed(2),
             high: +(d.high ?? 0).toFixed(2),

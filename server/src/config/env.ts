@@ -22,7 +22,7 @@ const config = {
     googleClientId: process.env.GOOGLE_CLIENT_ID || '',
     googleClientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
     googleRedirectUri: process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/auth/google/callback',
-    frontendUrl: process.env.FRONTEND_URL || '',
+    frontendUrl: (process.env.FRONTEND_URL || '').trim(),
     smtpHost: process.env.SMTP_HOST || 'smtp.ethereal.email',
     smtpPort: process.env.SMTP_PORT ? Number(process.env.SMTP_PORT) : 587,
     smtpUser: process.env.SMTP_USER || '',

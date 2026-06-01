@@ -6,12 +6,7 @@ import {
 import { TrendingUp, TrendingDown, DollarSign, PieChart, Plus, Trash2, RefreshCw } from 'lucide-react';
 import { stocksApi } from '../utils/api';
 
-const INITIAL_HOLDINGS = [
-  { id: 1, symbol: 'AAPL', name: 'Apple Inc.',       shares: 50,  buyPrice: 150.00 },
-  { id: 2, symbol: 'MSFT', name: 'Microsoft Corp.',  shares: 30,  buyPrice: 280.00 },
-  { id: 3, symbol: 'NVDA', name: 'NVIDIA Corp.',     shares: 40,  buyPrice: 110.00 },
-  { id: 4, symbol: 'TSLA', name: 'Tesla Inc.',       shares: 25,  buyPrice: 180.00 },
-];
+import { TRACKED_SYMBOLS, INITIAL_HOLDINGS } from '../utils/constants';
 
 const COLORS = ['#006d35', '#00b050', '#81c784', '#00401c'];
 
@@ -76,7 +71,7 @@ function Portfolio({ isDarkMode = false }) {
       <div className="flex justify-between items-center flex-wrap gap-3">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 mb-0.5">My Portfolio</h1>
-          <p className="text-sm text-gray-500">AAPL · MSFT · NVDA · TSLA</p>
+          <p className="text-sm text-gray-500">{TRACKED_SYMBOLS.join(' · ')}</p>
         </div>
         <div className="flex gap-2">
           <button

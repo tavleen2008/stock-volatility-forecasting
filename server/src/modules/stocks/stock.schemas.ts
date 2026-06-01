@@ -14,6 +14,3 @@ exchange: z.string().optional(),
 updatedAt: z.string().datetime()
 });
 
-export type StockMetricsResponse = z.infer<
-typeof stockMetricsResponseSchema 
-> | null;

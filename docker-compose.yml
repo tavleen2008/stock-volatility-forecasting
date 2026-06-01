@@ -5,8 +5,9 @@ services:
     image: redis:alpine
     container_name: volatility_redis
     restart: unless-stopped
-    # We do not expose the port to the host machine for security. 
-    # It will only be accessible by the backend on the docker network.
+    ports:
+      - "6379:6379"
+    # Port is exposed so your local Node app can connect to it.
 
   backend:
     build:

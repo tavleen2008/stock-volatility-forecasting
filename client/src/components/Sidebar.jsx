@@ -24,7 +24,8 @@ function Sidebar({ isOpen, isDarkMode }) {
       items: [
         { label: 'My Portfolio',        href: '/portfolio',  icon: <Briefcase size={18} />, badge: 'new' },
         { label: 'Volatility Forecast',  href: '/forecasts',  icon: <Zap size={18} />,      badge: 'new' },
-        { label: 'Market News',          href: '/news/top',   icon: <BookOpen size={18} />,  badge: 'top' },
+        { label: 'Market News',          href: '/news',       icon: <BookOpen size={18} />,  badge: 'live' },
+        { label: 'Compare Stocks',       href: '/compare',    icon: <BarChart3 size={18} />, badge: 'new' },
         { label: 'Market Movers',        href: '/mov',        icon: <TrendingUp size={18} />, badge: 'mov' },
       ],
     },

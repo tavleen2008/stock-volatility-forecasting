@@ -3,10 +3,26 @@ import {
   AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, Activity, RefreshCw } from 'lucide-react';
-import { stocksApi } from '../utils/api';
+import { TrendingUp, TrendingDown, DollarSign, Activity, RefreshCw, ExternalLink, Newspaper } from 'lucide-react';
+import { stocksApi, newsApi } from '../utils/api';
+import StockComparison from './StockComparison';
 
 import { TRACKED_SYMBOLS } from '../utils/constants';
+
+/* ── Sentiment helper (shared with NewsFeed) ──── */
+const BULL = ['surge','rally','gain','soar','rise','beat','record','high','profit','bullish','strong','upgrade'];
+const BEAR = ['drop','fall','decline','crash','loss','miss','low','weak','bearish','downgrade','cut','layoff','warning','risk'];
+const getSentiment = (t = '') => {
+  const l = t.toLowerCase();
+  const b = BULL.filter(w => l.includes(w)).length;
+  const r = BEAR.filter(w => l.includes(w)).length;
+  return b > r ? 'bullish' : r > b ? 'bearish' : 'neutral';
+};
+const timeAgo = (d) => {
+  const diff = Date.now() - new Date(d).getTime();
+  const m = Math.floor(diff / 60_000), h = Math.floor(diff / 3_600_000);
+  return m < 60 ? `${m}m ago` : h < 24 ? `${h}h ago` : `${Math.floor(diff/86_400_000)}d ago`;
+};
 
 const RANGE_OPTIONS = ['1d', '5d', '1mo', '3mo', '1y'];
 
@@ -26,6 +42,105 @@ function StatCard({ label, value, sub, subColor, icon: Icon, isDarkMode }) {
     </div>
   );
 }
+
+/* ── Latest Headlines strip (shown on Dashboard) ─────────────────── */
+function LatestHeadlines({ isDarkMode }) {
+  const [articles, setArticles] = useState([]);
+  const [loading, setLoading]   = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        // Grab a sample from all symbols, merge, take latest 6
+        const results = await Promise.allSettled(
+          TRACKED_SYMBOLS.map((s) => newsApi.bySymbol(s))
+        );
+        if (cancelled) return;
+        const seen = new Set();
+        const merged = results
+          .filter((r) => r.status === 'fulfilled' && Array.isArray(r.value))
+          .flatMap((r) => r.value)
+          .filter((a) => { if (seen.has(a.articleUrl)) return false; seen.add(a.articleUrl); return true; })
+          .sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt))
+          .slice(0, 6);
+        setArticles(merged);
+      } catch (_) { /* silently ignore — news is non-critical */ }
+      finally { if (!cancelled) setLoading(false); }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  const sentColor = (s) => s === 'bullish'
+    ? (isDarkMode ? 'text-emerald-400' : 'text-emerald-600')
+    : s === 'bearish'
+      ? (isDarkMode ? 'text-rose-400' : 'text-red-600')
+      : (isDarkMode ? 'text-slate-500' : 'text-gray-400');
+
+  const sentDot = (s) => s === 'bullish' ? 'bg-emerald-500' : s === 'bearish' ? 'bg-red-500' : 'bg-slate-400';
+
+  if (loading || articles.length === 0) return null;
+
+  return (
+    <div className={`border rounded-2xl p-5 shadow-sm ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'}`}>
+      <div className="flex justify-between items-center mb-4">
+        <div className="flex items-center gap-2">
+          <Newspaper size={16} className="text-green-500" />
+          <h3 className={`text-base font-semibold m-0 ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>
+            Latest Headlines
+          </h3>
+        </div>
+        <a
+          href="/news"
+          onClick={(e) => { e.preventDefault(); window.history.pushState({}, '', '/news'); window.dispatchEvent(new PopStateEvent('popstate')); }}
+          className={`text-xs font-semibold flex items-center gap-1 hover:underline ${isDarkMode ? 'text-green-400' : 'text-green-600'}`}
+        >
+          View all <ExternalLink size={11} />
+        </a>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+        {articles.map((a) => {
+          const s = getSentiment(`${a.title} ${a.description || ''}`);
+          return (
+            <a
+              key={a.articleUrl}
+              href={a.articleUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`group flex gap-3 p-3 rounded-xl border transition-all no-underline ${
+                isDarkMode
+                  ? 'border-slate-800 hover:border-slate-700 hover:bg-slate-800/40'
+                  : 'border-gray-100 hover:border-green-200 hover:bg-green-50/40'
+              }`}
+            >
+              <div className={`mt-1.5 w-2 h-2 rounded-full flex-shrink-0 ${sentDot(s)}`} />
+              <div className="min-w-0">
+                <p className={`text-xs font-semibold leading-snug line-clamp-2 mb-1 group-hover:text-green-600 transition-colors ${
+                  isDarkMode ? 'text-slate-200 group-hover:text-green-400' : 'text-gray-800'
+                }`}>
+                  {a.title}
+                </p>
+                <div className="flex items-center gap-2">
+                  <span className={`font-mono text-xs px-1.5 py-0.5 rounded ${
+                    isDarkMode ? 'bg-green-950/60 text-green-400' : 'bg-green-100 text-green-700'
+                  }`}>{a.symbol}</span>
+                  <span className={`text-xs ${sentColor(s)} font-medium`}>
+                    {s === 'bullish' ? '↑' : s === 'bearish' ? '↓' : '→'} {s}
+                  </span>
+                  <span className={`text-xs ml-auto ${isDarkMode ? 'text-slate-600' : 'text-gray-400'}`}>
+                    {timeAgo(a.publishedAt)}
+                  </span>
+                </div>
+              </div>
+            </a>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 
 function Dashboard({ isDarkMode = false }) {
   const [stocks, setStocks]               = useState([]);
@@ -125,6 +240,9 @@ function Dashboard({ isDarkMode = false }) {
           isDarkMode={isDarkMode}
         />
       </div>
+
+      {/* ── Stock Comparison Chart ── */}
+      <StockComparison isDarkMode={isDarkMode} />
 
       {/* ── Charts ── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
@@ -297,6 +415,9 @@ function Dashboard({ isDarkMode = false }) {
           </div>
         )}
       </div>
+      {/* ── Latest Headlines ── */}
+      <LatestHeadlines isDarkMode={isDarkMode} />
+
     </div>
   );
 }

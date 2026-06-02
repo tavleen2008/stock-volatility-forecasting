@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { fetchStockMetrics, fetchStockDashboard, fetchTrackedStocksList, fetchStockHistory } from './stock.service';
+import { fetchStockMetrics, fetchStockDashboard, fetchTrackedStocksList, fetchStockHistory, fetchStockOverview, fetchStockProfile } from './stock.service';
 
 /** GET /api/stocks — list of all tracked stocks with live quotes */
 export const listStocks = async (_req: Request, res: Response) => {
@@ -48,6 +48,36 @@ export const getStockDashboard = async (req: Request, res: Response) => {
         res.json(dashboard);
     } catch (error) {
         console.error(`[Stock Controller] Error fetching dashboard for ${symbol}:`, error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+/** GET /api/stocks/:symbol/overview — extended quote with P/E, beta, 52-wk, dividends etc. */
+export const getStockOverview = async (req: Request, res: Response) => {
+    const { symbol } = req.params;
+    if (!symbol) return res.status(400).json({ message: 'Symbol is required' });
+
+    try {
+        const overview = await fetchStockOverview(symbol.toUpperCase());
+        if (!overview) return res.status(404).json({ message: `Stock ${symbol} not found` });
+        res.json(overview);
+    } catch (error) {
+        console.error(`[Stock Controller] Error fetching overview for ${symbol}:`, error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+
+/** GET /api/stocks/:symbol/profile — company description, sector, industry, employees */
+export const getStockProfile = async (req: Request, res: Response) => {
+    const { symbol } = req.params;
+    if (!symbol) return res.status(400).json({ message: 'Symbol is required' });
+
+    try {
+        const profile = await fetchStockProfile(symbol.toUpperCase());
+        if (!profile) return res.status(404).json({ message: `Profile for ${symbol} not found` });
+        res.json(profile);
+    } catch (error) {
+        console.error(`[Stock Controller] Error fetching profile for ${symbol}:`, error);
         res.status(500).json({ message: 'Internal Server Error' });
     }
 };

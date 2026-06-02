@@ -63,6 +63,12 @@ export const stocksApi = {
 
   /** Explicit metrics endpoint */
   metrics: (symbol) => request(`/api/stocks/${symbol}/metrics`),
+
+  /** Extended overview: P/E, EPS, beta, 52-wk, dividends etc. */
+  overview: (symbol) => request(`/api/stocks/${symbol}/overview`),
+
+  /** Company profile: sector, industry, description, employees */
+  profile: (symbol) => request(`/api/stocks/${symbol}/profile`),
 };
 
 export const forecastApi = {

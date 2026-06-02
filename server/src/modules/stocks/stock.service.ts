@@ -155,3 +155,106 @@ export const fetchStockDashboard = async (symbol: string): Promise<StockDashboar
 
     return { symbol, metrics, news: news || [], forecast: mockForecast };
 };
+
+// ────────────────────────────────────────────────────
+//  Extended stock overview (for Security Analysis → Overview)
+//  Exposes P/E, EPS, beta, 52-wk range, dividend yield, etc.
+// ────────────────────────────────────────────────────
+export const fetchStockOverview = async (symbol: string) => {
+    const cacheKey = `stock:overview:${symbol}`;
+    try {
+        const cached = await safeGet(cacheKey);
+        if (cached) return JSON.parse(cached);
+
+        const result: any = await yahooFinance.quote(symbol);
+        if (!result) return null;
+
+        const overview = {
+            symbol: result.symbol,
+            shortName: result.shortName || result.longName || symbol,
+            longName: result.longName || result.shortName || symbol,
+            currentPrice: result.regularMarketPrice || 0,
+            previousClose: result.regularMarketPreviousClose || 0,
+            openPrice: result.regularMarketOpen || 0,
+            dayHigh: result.regularMarketDayHigh || 0,
+            dayLow: result.regularMarketDayLow || 0,
+            volume: result.regularMarketVolume || 0,
+            avgVolume: result.averageDailyVolume3Month || result.averageDailyVolume10Day || 0,
+            marketCap: result.marketCap || null,
+            trailingPE: result.trailingPE || null,
+            forwardPE: result.forwardPE || null,
+            epsTrailing: result.epsTrailingTwelveMonths || null,
+            epsForward: result.epsForward || null,
+            beta: result.beta || null,
+            fiftyTwoWeekHigh: result.fiftyTwoWeekHigh || null,
+            fiftyTwoWeekLow: result.fiftyTwoWeekLow || null,
+            fiftyDayAverage: result.fiftyDayAverage || null,
+            twoHundredDayAverage: result.twoHundredDayAverage || null,
+            dividendYield: result.dividendYield || null,
+            dividendRate: result.dividendRate || null,
+            exDividendDate: result.exDividendDate || null,
+            earningsDate: result.earningsTimestamp || null,
+            priceToBook: result.priceToBook || null,
+            bookValue: result.bookValue || null,
+            currency: result.currency || "USD",
+            exchange: result.fullExchangeName || result.exchange || "",
+            quoteType: result.quoteType || "EQUITY",
+            change: result.regularMarketChange || 0,
+            changePercent: result.regularMarketChangePercent || 0,
+            updatedAt: new Date().toISOString(),
+        };
+
+        await safeSetex(cacheKey, 120, JSON.stringify(overview)); // 2-min cache
+        return overview;
+    } catch (error) {
+        console.error(`[Stock Service] Error fetching overview for ${symbol}:`, error);
+        return null;
+    }
+};
+
+// ────────────────────────────────────────────────────
+//  Company profile (for Security Analysis → Description)
+//  Uses quoteSummary assetProfile module
+// ────────────────────────────────────────────────────
+export const fetchStockProfile = async (symbol: string) => {
+    const cacheKey = `stock:profile:${symbol}`;
+    try {
+        const cached = await safeGet(cacheKey);
+        if (cached) return JSON.parse(cached);
+
+        const result: any = await yahooFinance.quoteSummary(symbol, {
+            modules: ['assetProfile', 'summaryDetail', 'price'],
+        });
+        if (!result) return null;
+
+        const ap = result.assetProfile || {};
+        const sd = result.summaryDetail || {};
+        const pr = result.price || {};
+
+        const profile = {
+            symbol,
+            longName: pr.longName || pr.shortName || symbol,
+            shortName: pr.shortName || symbol,
+            sector: ap.sector || null,
+            industry: ap.industry || null,
+            website: ap.website || null,
+            country: ap.country || null,
+            city: ap.city || null,
+            state: ap.state || null,
+            address: ap.address1 || null,
+            fullTimeEmployees: ap.fullTimeEmployees || null,
+            longBusinessSummary: ap.longBusinessSummary || null,
+            // Extra from summaryDetail
+            marketCap: sd.marketCap || pr.marketCap || null,
+            currency: pr.currency || "USD",
+            exchange: pr.exchangeName || "",
+            updatedAt: new Date().toISOString(),
+        };
+
+        await safeSetex(cacheKey, 600, JSON.stringify(profile)); // 10-min cache (rarely changes)
+        return profile;
+    } catch (error) {
+        console.error(`[Stock Service] Error fetching profile for ${symbol}:`, error);
+        return null;
+    }
+};

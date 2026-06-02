@@ -51,7 +51,6 @@ export const verifyCodeAndRegister = async (data: VerifyEmailInput) => {
         throw new Error('Invalid verification code');
     }
 
-    // Code is valid, create the user
     const user = await prisma.user.create({
         data: {
             email: pendingUser.email,
@@ -62,7 +61,6 @@ export const verifyCodeAndRegister = async (data: VerifyEmailInput) => {
         },
     });
 
-    // Clean up Redis
     await safeDel(`pending_user:${data.email}`);
 
     return user;
@@ -123,7 +121,6 @@ export const generateTokens = async (user: User) => {
         expiresIn: AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRES_IN,
     });
 
-    // Save refresh token to Redis
     await safeSet(
         `refresh_token:${user.id}`, 
         refreshToken, 
@@ -164,6 +161,6 @@ export const revokeRefreshToken = async (token: string) => {
             await safeDel(`refresh_token:${decoded.sub}`);
         }
     } catch (error) {
-        // Ignore parsing errors, just fail silently during logout
+        throw new Error('Failed to revoke refresh token');
     }
 };

@@ -28,9 +28,8 @@ const RANGE_OPTIONS = ['1d', '5d', '1mo', '3mo', '1y'];
 
 function StatCard({ label, value, sub, subColor, icon: Icon, isDarkMode }) {
   return (
-    <div className={`border rounded-2xl p-5 card-hover shadow-sm transition-colors duration-300 ${
-      isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-gray-200 text-gray-900'
-    }`}>
+    <div className={`border rounded-2xl p-5 card-hover shadow-sm transition-colors duration-300 ${isDarkMode ? 'bg-slate-900 border-slate-800 text-slate-100' : 'bg-white border-gray-200 text-gray-900'
+      }`}>
       <div className="flex justify-between items-start mb-4">
         <span className={`text-xs uppercase tracking-widest font-semibold ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>{label}</span>
         <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${isDarkMode ? 'bg-slate-800' : 'bg-green-50'}`}>
@@ -143,13 +142,16 @@ function LatestHeadlines({ isDarkMode }) {
 
 
 function Dashboard({ isDarkMode = false }) {
-  const [stocks, setStocks]               = useState([]);
-  const [history, setHistory]             = useState([]);
+  const [stocks, setStocks] = useState([]);
+  const [history, setHistory] = useState([]);
   const [selectedSymbol, setSelectedSymbol] = useState(TRACKED_SYMBOLS[0]);
-  const [range, setRange]                 = useState('1mo');
-  const [loading, setLoading]             = useState(true);
-  const [histLoading, setHistLoading]     = useState(false);
-  const [error, setError]                 = useState(null);
+  const [range, setRange] = useState('1mo');
+  const [loading, setLoading] = useState(true);
+  const [histLoading, setHistLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [marketOpen, setMarketOpen] = useState(false);
+  const [etTime, setEtTime] = useState('');
+  const [nextEvent, setNextEvent] = useState('');
 
   const loadStocks = useCallback(async () => {
     setLoading(true); setError(null);
@@ -157,7 +159,7 @@ function Dashboard({ isDarkMode = false }) {
       const data = await stocksApi.list();
       setStocks(data.stocks || []);
     } catch (e) { setError(e.message); }
-    finally     { setLoading(false); }
+    finally { setLoading(false); }
   }, []);
 
   const loadHistory = useCallback(async () => {
@@ -166,16 +168,73 @@ function Dashboard({ isDarkMode = false }) {
       const data = await stocksApi.history(selectedSymbol, range);
       setHistory(data.history || []);
     } catch (e) { console.error('History fetch failed:', e.message); }
-    finally     { setHistLoading(false); }
+    finally { setHistLoading(false); }
   }, [selectedSymbol, range]);
 
-  useEffect(() => { loadStocks();  }, [loadStocks]);
+  useEffect(() => { loadStocks(); }, [loadStocks]);
   useEffect(() => { loadHistory(); }, [loadHistory]);
 
-  const gainers   = stocks.filter((s) => s.changePercent > 0);
-  const losers    = stocks.filter((s) => s.changePercent < 0);
+  // Market hours check (US equities: 09:30 - 16:00 America/New_York, Mon-Fri)
+  useEffect(() => {
+    const getETParts = (date = new Date()) => {
+      const fmt = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit', weekday: 'short', year: 'numeric', month: '2-digit', day: '2-digit' });
+      const parts = fmt.formatToParts(date);
+      const wk = parts.find(p => p.type === 'weekday')?.value || '';
+      const hr = parseInt(parts.find(p => p.type === 'hour')?.value || '0', 10);
+      const min = parseInt(parts.find(p => p.type === 'minute')?.value || '0', 10);
+      const sec = parseInt(parts.find(p => p.type === 'second')?.value || '0', 10);
+      return { wk, hr, min, sec };
+    };
+
+    const weekdayOrder = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const nextWeekdayName = (shortName, addDays = 1) => {
+      const idx = weekdayOrder.indexOf(shortName || 'Sun');
+      return weekdayOrder[(idx + addDays) % 7];
+    };
+
+    const compute = () => {
+      const now = new Date();
+      const { wk, hr, min, sec } = getETParts(now);
+      const minutes = hr * 60 + min;
+      const openMin = 9 * 60 + 30;
+      const closeMin = 16 * 60;
+
+      // market open boolean
+      const isOpen = !['Sat', 'Sun'].includes(wk) && minutes >= openMin && minutes < closeMin;
+
+      // ET time string
+      const etTimeStr = new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' }).format(now);
+
+      // next event
+      let next = '';
+      if (['Sat', 'Sun'].includes(wk)) {
+        // next Monday
+        const daysToMon = wk === 'Sat' ? 2 : 1;
+        next = `${nextWeekdayName(wk, daysToMon)} 09:30 ET`;
+      } else if (minutes < openMin) {
+        next = `Today 09:30 ET`;
+      } else if (minutes >= openMin && minutes < closeMin) {
+        next = `Today 16:00 ET`;
+      } else {
+        // after close: next trading day (skip weekend)
+        const isFri = wk === 'Fri';
+        next = isFri ? `Mon 09:30 ET` : `${nextWeekdayName(wk, 1)} 09:30 ET`;
+      }
+
+      setMarketOpen(isOpen);
+      setEtTime(etTimeStr);
+      setNextEvent(next);
+    };
+
+    compute();
+    const t = setInterval(compute, 60 * 1000);
+    return () => clearInterval(t);
+  }, []);
+
+  const gainers = stocks.filter((s) => s.changePercent > 0);
+  const losers = stocks.filter((s) => s.changePercent < 0);
   const topGainer = stocks.reduce((best, s) => (!best || s.changePercent > best.changePercent ? s : best), null);
-  const totalVol  = stocks.reduce((sum, s) => sum + (s.volume || 0), 0);
+  const totalVol = stocks.reduce((sum, s) => sum + (s.volume || 0), 0);
 
   return (
     <div className="flex flex-col gap-6 animate-fade-in">
@@ -189,11 +248,10 @@ function Dashboard({ isDarkMode = false }) {
         <button
           onClick={loadStocks}
           disabled={loading}
-          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm shadow-sm transition-all disabled:opacity-50 ${
-            isDarkMode
-              ? 'border-slate-800 bg-slate-900 text-slate-300 hover:border-green-400 hover:text-green-400'
-              : 'border-gray-200 bg-white text-gray-600 hover:border-green-400 hover:text-green-600'
-          }`}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm shadow-sm transition-all disabled:opacity-50 ${isDarkMode
+            ? 'border-slate-800 bg-slate-900 text-slate-300 hover:border-green-400 hover:text-green-400'
+            : 'border-gray-200 bg-white text-gray-600 hover:border-green-400 hover:text-green-600'
+            }`}
         >
           <RefreshCw size={14} className={loading ? 'animate-spin' : ''} />
           Refresh
@@ -234,8 +292,8 @@ function Dashboard({ isDarkMode = false }) {
         />
         <StatCard
           label="Market Status"
-          value={<span className="text-green-500">OPEN</span>}
-          sub="Regular Trading Hours"
+          value={marketOpen ? <span className="text-green-500">OPEN</span> : <span className="text-gray-500">CLOSED</span>}
+          sub={`${etTime} ET • Next: ${nextEvent}`}
           icon={Activity}
           isDarkMode={isDarkMode}
         />
@@ -255,11 +313,10 @@ function Dashboard({ isDarkMode = false }) {
               <select
                 value={selectedSymbol}
                 onChange={(e) => setSelectedSymbol(e.target.value)}
-                className={`text-xs px-2.5 py-1.5 rounded-lg border cursor-pointer focus:outline-none focus:border-green-400 ${
-                  isDarkMode
-                    ? 'bg-slate-800 border-slate-700 text-slate-200'
-                    : 'bg-white border-gray-200 text-gray-700'
-                }`}
+                className={`text-xs px-2.5 py-1.5 rounded-lg border cursor-pointer focus:outline-none focus:border-green-400 ${isDarkMode
+                  ? 'bg-slate-800 border-slate-700 text-slate-200'
+                  : 'bg-white border-gray-200 text-gray-700'
+                  }`}
               >
                 {(stocks.length ? stocks : [{ symbol: 'AAPL' }]).map((s) => (
                   <option key={s.symbol} value={s.symbol}>{s.symbol}</option>
@@ -291,7 +348,7 @@ function Dashboard({ isDarkMode = false }) {
               <AreaChart data={history}>
                 <defs>
                   <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#006d35" stopOpacity={0.18} />
+                    <stop offset="5%" stopColor="#006d35" stopOpacity={0.18} />
                     <stop offset="95%" stopColor="#006d35" stopOpacity={0} />
                   </linearGradient>
                 </defs>
@@ -361,11 +418,10 @@ function Dashboard({ isDarkMode = false }) {
                   {['Symbol', 'Name', 'Price', 'Change', '% Change', 'Volume'].map((h) => (
                     <th
                       key={h}
-                      className={`text-left px-4 py-3 font-semibold uppercase text-xs tracking-wider first:rounded-tl-lg last:rounded-tr-lg ${
-                        isDarkMode
-                          ? 'bg-slate-800/50 text-slate-400'
-                          : 'bg-gray-50 text-gray-500'
-                      }`}
+                      className={`text-left px-4 py-3 font-semibold uppercase text-xs tracking-wider first:rounded-tl-lg last:rounded-tr-lg ${isDarkMode
+                        ? 'bg-slate-800/50 text-slate-400'
+                        : 'bg-gray-50 text-gray-500'
+                        }`}
                     >
                       {h}
                     </th>
@@ -377,16 +433,14 @@ function Dashboard({ isDarkMode = false }) {
                   <tr
                     key={stock.symbol}
                     onClick={() => setSelectedSymbol(stock.symbol)}
-                    className={`border-b cursor-pointer transition-colors duration-150 ${
-                      isDarkMode
-                        ? `border-slate-800/50 hover:bg-slate-800/60 ${selectedSymbol === stock.symbol ? 'bg-slate-800/80' : ''}`
-                        : `border-gray-50 hover:bg-green-50/50 ${selectedSymbol === stock.symbol ? 'bg-green-50/70' : ''}`
-                    }`}
+                    className={`border-b cursor-pointer transition-colors duration-150 ${isDarkMode
+                      ? `border-slate-800/50 hover:bg-slate-800/60 ${selectedSymbol === stock.symbol ? 'bg-slate-800/80' : ''}`
+                      : `border-gray-50 hover:bg-green-50/50 ${selectedSymbol === stock.symbol ? 'bg-green-50/70' : ''}`
+                      }`}
                   >
                     <td className="px-4 py-3.5">
-                      <span className={`font-bold font-mono px-2 py-0.5 rounded-md text-xs ${
-                        isDarkMode ? 'bg-green-950/80 text-green-400' : 'bg-green-100 text-green-700'
-                      }`}>{stock.symbol}</span>
+                      <span className={`font-bold font-mono px-2 py-0.5 rounded-md text-xs ${isDarkMode ? 'bg-green-950/80 text-green-400' : 'bg-green-100 text-green-700'
+                        }`}>{stock.symbol}</span>
                     </td>
                     <td className={`px-4 py-3.5 text-xs ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>{stock.name}</td>
                     <td className={`px-4 py-3.5 font-semibold ${isDarkMode ? 'text-slate-100' : 'text-gray-950'}`}>${stock.price?.toFixed(2)}</td>
@@ -397,11 +451,10 @@ function Dashboard({ isDarkMode = false }) {
                       </span>
                     </td>
                     <td className="px-4 py-3.5 font-semibold">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        stock.changePercent >= 0
-                          ? (isDarkMode ? 'bg-emerald-950/60 text-emerald-400' : 'bg-emerald-50 text-emerald-700')
-                          : (isDarkMode ? 'bg-rose-950/60 text-rose-400' : 'bg-red-50 text-red-600')
-                      }`}>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${stock.changePercent >= 0
+                        ? (isDarkMode ? 'bg-emerald-950/60 text-emerald-400' : 'bg-emerald-50 text-emerald-700')
+                        : (isDarkMode ? 'bg-rose-950/60 text-rose-400' : 'bg-red-50 text-red-600')
+                        }`}>
                         {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent?.toFixed(2)}%
                       </span>
                     </td>

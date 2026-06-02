@@ -34,10 +34,6 @@ export const googleCallback = async (req: Request, res: Response, next: NextFunc
 
         const { accessToken, refreshToken } = await authService.generateTokens(user);
         
-        // We can't easily set cookies on a redirect if the frontend is on a different domain,
-        // but for local dev with same domain it works. For production OAuth, usually you redirect
-        // with a short-lived one-time code to exchange for tokens on the frontend.
-        // For simplicity here, we'll set the cookie and redirect with access token.
         setRefreshTokenCookie(res, refreshToken);
 
         if (config.frontendUrl) {

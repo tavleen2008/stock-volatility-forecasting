@@ -61,10 +61,10 @@ function Sidebar({ isOpen, isDarkMode }) {
     return <div className="w-0 transition-all duration-300 ease-in-out" />;
   }
 
-  const getBgColor    = () => isDarkMode ? 'bg-slate-900 border-dark-border' : 'bg-white border-gray-200';
+  const getBgColor    = () => isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200';
   const getTextColor  = () => isDarkMode ? 'text-white' : 'text-gray-900';
   const getHoverColor = () => isDarkMode ? 'hover:bg-slate-800' : 'hover:bg-green-50';
-  const getDividerColor = () => isDarkMode ? 'border-dark-border' : 'border-gray-200';
+  const getDividerColor = () => isDarkMode ? 'border-slate-800' : 'border-gray-200';
 
   return (
     <aside className={`w-72 border-r overflow-y-auto transition-all duration-300 ease-in-out ${getBgColor()}`}>
@@ -72,7 +72,7 @@ function Sidebar({ isOpen, isDarkMode }) {
         {navSections.map((section) => (
           <div key={section.title}>
             <button
-              className={`flex items-center justify-between w-full px-4 py-2.5 bg-transparent border-none text-xs font-semibold uppercase cursor-pointer transition-all ${isDarkMode ? 'text-gray-500 hover:text-white hover:bg-dark-hover' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
+              className={`flex items-center justify-between w-full px-4 py-2.5 bg-transparent border-none text-xs font-semibold uppercase cursor-pointer transition-all ${isDarkMode ? 'text-slate-500 hover:text-white hover:bg-slate-800' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
               onClick={() => toggleSection(section.title)}
             >
               <span className="tracking-wider">{section.title}</span>
@@ -90,12 +90,12 @@ function Sidebar({ isOpen, isDarkMode }) {
                       href={item.href} 
                       className={`flex items-center gap-2.5 px-4 py-2 text-sm no-underline transition-all border-l-3 border-transparent
                         ${isDarkMode
-                          ? 'text-dark-text hover:text-white hover:bg-slate-800 hover:border-l-green-400'
+                          ? 'text-slate-400 hover:text-white hover:bg-slate-800 hover:border-l-green-400'
                           : 'text-gray-600 hover:text-green-700 hover:bg-green-50 hover:border-l-green-500'}`}
                     >
                       {item.icon && <span className="flex items-center justify-center w-4.5 h-4.5 flex-shrink-0">{item.icon}</span>}
                       <span className="flex-1 text-left">{item.label}</span>
-                      {item.badge && <span className={`inline-block py-0.5 px-1.5 rounded text-xs ml-auto ${isDarkMode ? 'bg-dark-hover text-gray-600' : 'bg-gray-200 text-gray-600'}`}>{item.badge}</span>}
+                      {item.badge && <span className={`inline-block py-0.5 px-1.5 rounded text-xs ml-auto ${isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-gray-200 text-gray-600'}`}>{item.badge}</span>}
                     </a>
                   </li>
                 ))}

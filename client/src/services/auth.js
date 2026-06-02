@@ -40,6 +40,22 @@ export const authService = {
     }
   },
 
+  /** Resend OTP verification code */
+  resendCode: async (email) => {
+    try {
+      const res = await fetch(`${API_URL}/api/auth/register/resend-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) return { success: false, error: data.message };
+      return { success: true, message: data.message };
+    } catch {
+      return { success: false, error: 'Network error.' };
+    }
+  },
+
   /** Verify OTP + finalize registration (step 2) */
   verifyAndRegister: async (email, code) => {
     try {

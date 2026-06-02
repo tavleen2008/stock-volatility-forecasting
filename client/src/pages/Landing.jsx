@@ -15,7 +15,7 @@ const TICKERS = [
 ];
 
 /* ─── Scroll animation hook ─────────────────────────────────── */
-function useScrollReveal() {
+function useScrollReveal() { // animations' visibility on scroll using IntersectionObserver
   useEffect(() => {
     const obs = new IntersectionObserver(
       (entries) => entries.forEach((e) => {
@@ -32,7 +32,7 @@ function useScrollReveal() {
 }
 
 /* ─── Ticker Bar ────────────────────────────────────────────── */
-function TickerBar() {
+function TickerBar() { // 
   const items = [...TICKERS, ...TICKERS, ...TICKERS];
   return (
     <div style={{

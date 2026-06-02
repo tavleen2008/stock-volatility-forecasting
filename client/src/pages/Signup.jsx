@@ -125,10 +125,13 @@ function Signup() {
   const [error, setError]       = useState('');
   const [loading, setLoading]   = useState(false);
   const [googleLoad, setGoogleLoad] = useState(false);
+  const [resendMessage, setResendMessage] = useState('');
+  const [resendLoading, setResendLoading] = useState(false);
 
   const handleSignup = async (e) => {
     e.preventDefault();
     setError('');
+    setResendMessage('');
     if (!name)                            return setError('Please enter your full name.');
     if (!email)                           return setError('Please enter your email.');
     if (!/\S+@\S+\.\S+/.test(email))      return setError('Enter a valid email address.');
@@ -145,12 +148,26 @@ function Signup() {
   const handleVerify = async (e) => {
     e.preventDefault();
     setError('');
+    setResendMessage('');
     if (!otp || otp.length < 4) return setError('Enter the 6-digit code from your email.');
     setLoading(true);
     const res = await authService.verifyAndRegister(email, otp);
     setLoading(false);
     if (res.success) navigate('/dashboard');
     else setError(res.error || 'Invalid code. Check your email and try again.');
+  };
+
+  const handleResendCode = async () => {
+    setError('');
+    setResendMessage('');
+    setResendLoading(true);
+    const res = await authService.resendCode(email);
+    setResendLoading(false);
+    if (res.success) {
+      setResendMessage(res.message || 'Verification code resent!');
+    } else {
+      setError(res.error || 'Failed to resend verification code.');
+    }
   };
 
   const handleGoogle = () => {
@@ -330,6 +347,11 @@ function Signup() {
             </p>
 
             {error && <div style={s.error}>⚠ {error}</div>}
+            {resendMessage && (
+              <div style={{ ...s.error, background: '#e8f5e9', border: '1px solid #c8e6c9', color: '#2e7d32' }}>
+                ✓ {resendMessage}
+              </div>
+            )}
 
             <form onSubmit={handleVerify} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
               <div>
@@ -363,6 +385,27 @@ function Signup() {
                 {loading ? 'Verifying…' : 'Verify & Continue →'}
               </button>
             </form>
+
+            <button
+              type="button"
+              onClick={handleResendCode}
+              disabled={resendLoading}
+              style={{
+                width: '100%', marginTop: 12,
+                background: 'transparent', border: '1px solid #006d35',
+                borderRadius: 8,
+                cursor: resendLoading ? 'not-allowed' : 'pointer',
+                fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase',
+                color: '#006d35', padding: '12px 0',
+                fontFamily: '"Hanken Grotesk", sans-serif',
+                transition: 'all 0.2s',
+                opacity: resendLoading ? 0.7 : 1
+              }}
+              onMouseEnter={e => { if (!resendLoading) { e.currentTarget.style.background = '#006d35'; e.currentTarget.style.color = '#fff'; } }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#006d35'; }}
+            >
+              {resendLoading ? 'Resending…' : 'Resend Code'}
+            </button>
 
             <button
               onClick={() => setStep('form')}

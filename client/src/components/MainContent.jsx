@@ -44,7 +44,7 @@ function MainContent({ isDarkMode }) {
   return (
     <main
       className={`flex-1 overflow-y-auto p-5 transition-colors duration-300 ${
-        isDarkMode ? 'bg-dark-bg' : 'bg-gray-50'
+        isDarkMode ? 'bg-slate-950' : 'bg-gray-50'
       }`}
     >
       {currentPage === 'portfolio'  && <Portfolio  isDarkMode={isDarkMode} />}

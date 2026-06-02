@@ -6,9 +6,7 @@ import { TRACKED_SYMBOLS } from "./stock.constants";
 
 const yahooFinance = new YahooFinance();
 
-// ────────────────────────────────────────────────────
-//  Individual stock metrics
-// ────────────────────────────────────────────────────
+
 export const fetchStockMetrics = async (symbol: string): Promise<StockMetricsResponse | null> => {
     const cacheKey = `stock:metrics:${symbol}`;
 
@@ -46,9 +44,6 @@ export const fetchStockMetrics = async (symbol: string): Promise<StockMetricsRes
     }
 };
 
-// ────────────────────────────────────────────────────
-//  Tracked stocks list (for dashboard table)
-// ────────────────────────────────────────────────────
 export const fetchTrackedStocksList = async () => {
     const cacheKey = 'stock:list';
     try {
@@ -90,9 +85,6 @@ export const fetchTrackedStocksList = async () => {
     }
 };
 
-// ────────────────────────────────────────────────────
-//  Historical price data (for charts)
-// ────────────────────────────────────────────────────
 const RANGE_TO_PARAMS: Record<string, { period1: string; interval: '1d' | '1wk' | '1mo' }> = {
     '1d':  { period1: daysAgo(2),  interval: '1d' },
     '5d':  { period1: daysAgo(5),  interval: '1d' },
@@ -138,9 +130,6 @@ export const fetchStockHistory = async (symbol: string, range: string = '1mo') =
     }
 };
 
-// ────────────────────────────────────────────────────
-//  Full dashboard (metrics + news + mock forecast)
-// ────────────────────────────────────────────────────
 export const fetchStockDashboard = async (symbol: string): Promise<StockDashboardResponse> => {
     const [metrics, news] = await Promise.all([
         fetchStockMetrics(symbol),

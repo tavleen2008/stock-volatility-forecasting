@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { fetchStockMetrics, fetchStockDashboard, fetchTrackedStocksList, fetchStockHistory } from './stock.service';
 
-/** GET /api/stocks — list of all tracked stocks with live quotes */
 export const listStocks = async (_req: Request, res: Response) => {
     try {
         const stocks = await fetchTrackedStocksList();
@@ -12,7 +11,6 @@ export const listStocks = async (_req: Request, res: Response) => {
     }
 };
 
-/** GET /api/stocks/:symbol — individual stock metrics */
 export const getStockMetrics = async (req: Request, res: Response) => {
     const { symbol } = req.params;
     if (!symbol) return res.status(400).json({ message: 'Symbol is required' });
@@ -23,7 +21,6 @@ export const getStockMetrics = async (req: Request, res: Response) => {
     res.json(metrics);
 };
 
-/** GET /api/stocks/:symbol/history?range=1mo */
 export const getStockHistory = async (req: Request, res: Response) => {
     const { symbol } = req.params;
     const range = (req.query.range as string) || '1mo';
@@ -38,7 +35,6 @@ export const getStockHistory = async (req: Request, res: Response) => {
     }
 };
 
-/** GET /api/stocks/:symbol/dashboard — full dashboard payload */
 export const getStockDashboard = async (req: Request, res: Response) => {
     const { symbol } = req.params;
     if (!symbol) return res.status(400).json({ message: 'Symbol is required' });

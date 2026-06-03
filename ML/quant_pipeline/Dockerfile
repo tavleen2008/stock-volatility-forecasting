@@ -1,20 +1,18 @@
 FROM python:3.11-slim
 
-WORKDIR /project
+WORKDIR /project/ML/quant_pipeline
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
-RUN pip install uv
+RUN pip install --no-cache-dir uv
 
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen
 
-ENV PATH="/project/.venv/bin:${PATH}"
+ENV PATH="/project/ML/quant_pipeline/.venv/bin:${PATH}"
 
 COPY . .
-
-WORKDIR /project/ML/quant_pipeline
 
 EXPOSE 8080
 

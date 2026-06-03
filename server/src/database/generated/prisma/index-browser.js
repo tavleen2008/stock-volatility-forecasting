@@ -146,9 +146,24 @@ exports.Prisma.NewsArticleScalarFieldEnum = {
   createdAt: 'createdAt'
 };
 
+exports.Prisma.ForecastScalarFieldEnum = {
+  id: 'id',
+  symbol: 'symbol',
+  forecastDate: 'forecastDate',
+  forecastVolatility: 'forecastVolatility',
+  confidenceScore: 'confidenceScore',
+  sentimentScore: 'sentimentScore',
+  fullPayload: 'fullPayload',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.SortOrder = {
   asc: 'asc',
   desc: 'desc'
+};
+
+exports.Prisma.JsonNullValueInput = {
+  JsonNull: Prisma.JsonNull
 };
 
 exports.Prisma.QueryMode = {
@@ -160,6 +175,12 @@ exports.Prisma.NullsOrder = {
   first: 'first',
   last: 'last'
 };
+
+exports.Prisma.JsonNullValueFilter = {
+  DbNull: Prisma.DbNull,
+  JsonNull: Prisma.JsonNull,
+  AnyNull: Prisma.AnyNull
+};
 exports.AuthProvider = exports.$Enums.AuthProvider = {
   GOOGLE: 'GOOGLE',
   LOCAL: 'LOCAL'
@@ -167,7 +188,8 @@ exports.AuthProvider = exports.$Enums.AuthProvider = {
 
 exports.Prisma.ModelName = {
   User: 'User',
-  NewsArticle: 'NewsArticle'
+  NewsArticle: 'NewsArticle',
+  Forecast: 'Forecast'
 };
 
 /**

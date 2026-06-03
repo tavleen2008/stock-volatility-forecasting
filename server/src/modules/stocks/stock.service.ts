@@ -3,6 +3,7 @@ import { StockMetricsResponse, StockDashboardResponse } from "./stock.types";
 import { safeGet, safeSetex } from "../../config/redis";
 import { fetchNewsForSymbolFromDb } from "../news/news.service";
 import { TRACKED_SYMBOLS } from "./stock.constants";
+import { getRangeParams } from "../../shared/constants/time.constants";
 
 const yahooFinance = new YahooFinance();
 
@@ -85,27 +86,13 @@ export const fetchTrackedStocksList = async () => {
     }
 };
 
-const RANGE_TO_PARAMS: Record<string, { period1: string; interval: '1d' | '1wk' | '1mo' }> = {
-    '1d':  { period1: daysAgo(2),  interval: '1d' },
-    '5d':  { period1: daysAgo(5),  interval: '1d' },
-    '1mo': { period1: daysAgo(31), interval: '1d' },
-    '3mo': { period1: daysAgo(92), interval: '1d' },
-    '1y':  { period1: daysAgo(366), interval: '1wk' },
-};
-
-function daysAgo(n: number): string {
-    const d = new Date();
-    d.setDate(d.getDate() - n);
-    return d.toISOString().split('T')[0];
-}
-
 export const fetchStockHistory = async (symbol: string, range: string = '1mo') => {
     const cacheKey = `stock:history:${symbol}:${range}`;
     try {
         const cached = await safeGet(cacheKey);
         if (cached) return JSON.parse(cached);
 
-        const params = RANGE_TO_PARAMS[range] || RANGE_TO_PARAMS['1mo'];
+        const params = getRangeParams(range);
         const result: any = await yahooFinance.chart(symbol, {
             period1: params.period1,
             interval: params.interval,

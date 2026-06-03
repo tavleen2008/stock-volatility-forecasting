@@ -20,15 +20,16 @@ export const getLatestForecast = async (req: Request, res: Response) => {
 export const getForecastHistory = async (req: Request, res: Response) => {
     try {
         const symbol = req.params.symbol?.trim().toUpperCase();
-        const days = parseInt(req.query.days as string) || 30;
-        
-        if (!symbol) return res.status(400).json({ message: 'Stock symbol is required' });
-        if (isNaN(days) || days <= 0) return res.status(400).json({ message: 'Invalid days parameter' });
+        const range = (req.query.range as any) || '1mo';
 
-        const history = await ForecastService.getForecastHistory(symbol, days);
-        return res.json({ history });
+        if (!symbol) return res.status(400).json({ message: 'Stock symbol is required' });
+
+        const history = await ForecastService.getForecastHistory(symbol, range);
+        if (!history || history.length === 0) return res.status(404).json({ message: `Forecast history not found for ${symbol}` });
+
+        return res.json(history);
     } catch (error: any) {
-        console.error(`[Forecast Controller] Error fetching forecast history:`, error);
+        console.error(`[Forecast Controller] Error fetching history:`, error);
         return res.status(500).json({ message: error?.message || 'Internal server error' });
     }
 };
@@ -52,12 +53,11 @@ export const getForecastSummary = async (req: Request, res: Response) => {
 export const getForecastAccuracy = async (req: Request, res: Response) => {
     try {
         const symbol = req.params.symbol?.trim().toUpperCase();
-        const days = parseInt(req.query.days as string) || 30;
+        const range = (req.query.range as any) || '1mo';
 
         if (!symbol) return res.status(400).json({ message: 'Stock symbol is required' });
-        if (isNaN(days) || days <= 0) return res.status(400).json({ message: 'Invalid days parameter' });
 
-        const accuracyData = await ForecastService.getForecastAccuracy(symbol, days);
+        const accuracyData = await ForecastService.getForecastAccuracy(symbol, range);
         if (!accuracyData) return res.status(404).json({ message: `Data not found for ${symbol}` });
 
         return res.json(accuracyData);
@@ -81,8 +81,6 @@ export const getForecastNewsImpact = async (req: Request, res: Response) => {
         return res.status(500).json({ message: error?.message || 'Internal server error' });
     }
 };
-
-// Phase 3: Macro & Discovery
 
 export const getForecastScreener = async (req: Request, res: Response) => {
     try {

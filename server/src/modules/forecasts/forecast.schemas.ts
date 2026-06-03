@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { TIME_RANGES } from '../../shared/constants/time.constants';
 
 export const symbolParamSchema = z.object({
     params: z.object({
@@ -6,12 +7,12 @@ export const symbolParamSchema = z.object({
     })
 });
 
-export const symbolAndDaysSchema = z.object({
+export const symbolAndRangeSchema = z.object({
     params: z.object({
         symbol: z.string().min(1, 'Stock symbol is required').toUpperCase(),
     }),
     query: z.object({
-        days: z.string().regex(/^\d+$/, 'Days must be a positive integer').optional().default('30'),
+        range: z.enum(TIME_RANGES).optional().default('1mo'),
     })
 });
 

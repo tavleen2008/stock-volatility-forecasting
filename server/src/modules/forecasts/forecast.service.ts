@@ -1,25 +1,35 @@
 import { mockMlClient } from './mock.ml.client';
 import { prisma } from '../../config/prisma';
 import { fetchStockHistory } from '../stocks/stock.service';
+import { TimeRange, getRangeParams } from '../../shared/constants/time.constants';
+import { ForecastPayload, ForecastHistoryItem } from './forecast.types';
+import { safeGet, safeSetex } from '../../config/redis';
 
 export const ForecastService = {
-    getLatestForecast: async (symbol: string) => {
+    getLatestForecast: async (symbol: string): Promise<ForecastPayload> => {
+        const cacheKey = `forecast:latest:${symbol}`;
+        const cached = await safeGet(cacheKey);
+        if (cached) return JSON.parse(cached);
 
         const dbForecast = await prisma.forecast.findFirst({
             where: { symbol },
             orderBy: { forecastDate: 'desc' },
         });
 
+        let result;
         if (dbForecast) {
-            return dbForecast.fullPayload as any;
+            result = dbForecast.fullPayload as unknown as ForecastPayload;
+        } else {
+            result = await mockMlClient.getLatestForecast(symbol);
         }
 
-        return await mockMlClient.getLatestForecast(symbol);
+        await safeSetex(cacheKey, 3600, JSON.stringify(result));
+        return result;
     },
 
-    getForecastHistory: async (symbol: string, days: number) => {
-        const fromDate = new Date();
-        fromDate.setDate(fromDate.getDate() - days);
+    getForecastHistory: async (symbol: string, range: TimeRange): Promise<ForecastHistoryItem[]> => {
+        const params = getRangeParams(range);
+        const fromDate = new Date(params.period1);
 
         const dbHistory = await prisma.forecast.findMany({
             where: {
@@ -28,35 +38,34 @@ export const ForecastService = {
                     gte: fromDate,
                 }
             },
-            orderBy: { forecastDate: 'asc' }, // usually charts want ascending date order
+            orderBy: { forecastDate: 'asc' },
         });
 
         if (dbHistory.length > 0) {
-            // Filter to keep only the latest prediction for each day
             const dailyMap = new Map();
             for (const item of dbHistory) {
                 const dateStr = item.forecastDate.toISOString().split('T')[0];
                 // Since orderBy is ascending, the last item we set for a date will naturally be the latest time of that day
                 dailyMap.set(dateStr, item);
             }
-            
+
             const filteredHistory = Array.from(dailyMap.values());
 
             return filteredHistory.map(item => {
-                const payload = item.fullPayload as any;
+                const payload = item.fullPayload as unknown as ForecastPayload;
                 return {
                     date: item.forecastDate.toISOString().split('T')[0],
                     predicted_volatility: item.forecastVolatility,
                     // Note: actual_volatility would ideally come from the stock history DB, 
                     // but we'll include it from the payload if it exists
-                    actual_volatility: payload.forecast_volatility, 
+                    actual_volatility: payload.forecast_volatility,
                     average_sentiment: item.sentimentScore
                 };
             });
         }
 
         // Fallback to generating mock history if DB is empty
-        return await mockMlClient.getHistory(symbol, days);
+        return await mockMlClient.getHistory(symbol, range);
     },
 
     getForecastSummary: async (symbol: string) => {
@@ -72,9 +81,8 @@ export const ForecastService = {
         };
     },
 
-    getForecastAccuracy: async (symbol: string, days: number) => {
-        const forecastHistory = await ForecastService.getForecastHistory(symbol, days);
-        const range = days <= 5 ? '5d' : days <= 30 ? '1mo' : days <= 90 ? '3mo' : '1y';
+    getForecastAccuracy: async (symbol: string, range: TimeRange) => {
+        const forecastHistory = await ForecastService.getForecastHistory(symbol, range);
         const realHistory = await fetchStockHistory(symbol, range);
 
         // Map real history by date for easy lookup
@@ -88,7 +96,7 @@ export const ForecastService = {
 
         const alignedData = forecastHistory.map(forecast => {
             const realData = realHistoryMap.get(forecast.date);
-            
+
             if (forecast.actual_volatility != null && forecast.predicted_volatility != null) {
                 totalError += Math.abs(forecast.predicted_volatility - forecast.actual_volatility);
                 count++;
@@ -108,7 +116,7 @@ export const ForecastService = {
 
         return {
             symbol,
-            days,
+            range,
             accuracy_score: parseFloat(accuracy_score.toFixed(2)),
             mean_absolute_error: parseFloat(mae.toFixed(4)),
             data: alignedData,
@@ -131,19 +139,23 @@ export const ForecastService = {
     },
 
     getForecastScreener: async (filters: any) => {
+        const cacheKey = `forecast:screener:${JSON.stringify(filters)}`;
+        const cached = await safeGet(cacheKey);
+        if (cached) return JSON.parse(cached);
+
         const { TRACKED_SYMBOLS } = await import('../stocks/stock.constants');
         const symbols = TRACKED_SYMBOLS.map(s => s.symbol);
-        
+
         let allForecasts = [];
         for (const sym of symbols) {
             const forecast = await ForecastService.getLatestForecast(sym);
             if (forecast) allForecasts.push(forecast);
         }
 
-        return allForecasts.filter(f => {
+        const filtered = allForecasts.filter(f => {
             if (filters.minVolatility && f.forecast_volatility < filters.minVolatility) return false;
             if (filters.minConfidence && f.confidence_score < filters.minConfidence) return false;
-            
+
             if (filters.sentiment && filters.sentiment !== 'all') {
                 const isPositive = f.sentiment_features.average_sentiment > 0;
                 if (filters.sentiment === 'positive' && !isPositive) return false;
@@ -151,12 +163,19 @@ export const ForecastService = {
             }
             return true;
         });
+
+        await safeSetex(cacheKey, 3600, JSON.stringify(filtered));
+        return filtered;
     },
 
     getForecastOpportunities: async () => {
+        const cacheKey = `forecast:opportunities`;
+        const cached = await safeGet(cacheKey);
+        if (cached) return JSON.parse(cached);
+
         const { TRACKED_SYMBOLS } = await import('../stocks/stock.constants');
         const symbols = TRACKED_SYMBOLS.map(s => s.symbol);
-        
+
         let allForecasts = [];
         for (const sym of symbols) {
             const forecast = await ForecastService.getLatestForecast(sym);
@@ -170,6 +189,8 @@ export const ForecastService = {
 
         scored.sort((a, b) => b.opportunity_score - a.opportunity_score);
 
-        return scored.slice(0, 5);
+        const result = scored.slice(0, 5);
+        await safeSetex(cacheKey, 3600, JSON.stringify(result));
+        return result;
     }
 };

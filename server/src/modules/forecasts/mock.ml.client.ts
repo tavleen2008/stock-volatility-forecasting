@@ -1,4 +1,6 @@
-export const generateMockForecast = (symbol: string, customDate?: Date) => {
+import { ForecastPayload, ForecastHistoryItem } from './forecast.types';
+
+export const generateMockForecast = (symbol: string, customDate?: Date): ForecastPayload => {
     const date = customDate || new Date();
     const dateString = date.toISOString().split('T')[0];
     
@@ -48,32 +50,34 @@ export const generateMockForecast = (symbol: string, customDate?: Date) => {
     };
 };
 
-export const generateMockHistory = (symbol: string, days: number) => {
+export const generateMockHistory = (symbol: string, range: string): ForecastHistoryItem[] => {
+    let days = 30;
+    if (range === '1d') days = 1;
+    else if (range === '5d') days = 5;
+    else if (range === '1mo') days = 30;
+    else if (range === '3mo') days = 90;
+    else if (range === '1y') days = 365;
+
     const history = [];
     const today = new Date();
+    const baseVolatility = 0.15 + (Math.random() * 0.1); // Base 15-25%
     
     for (let i = days; i >= 0; i--) {
-        const targetDate = new Date(today);
-        targetDate.setDate(today.getDate() - i);
+        const date = new Date();
+        date.setDate(date.getDate() - i);
         
-        // Skip weekends roughly (not perfectly accurate for trading days but good enough for mock)
-        if (targetDate.getDay() === 0 || targetDate.getDay() === 6) continue;
+        // Generate some realistic-looking mock walk
+        const randomWalk = (Math.random() - 0.5) * 0.05;
+        const predVolatility = Math.max(0.05, baseVolatility + randomWalk);
         
-        const forecast = generateMockForecast(symbol, targetDate);
-        
-        // Add some noise to historical data
-        const noise = (Math.random() - 0.5) * 0.05;
-        forecast.forecast_volatility = Math.max(0.05, forecast.forecast_volatility + noise);
-        forecast.sentiment_features.average_sentiment += (Math.random() - 0.5) * 0.2;
-        
-        // For accuracy endpoint, we need actual realized volatility too
-        const actual_volatility = forecast.forecast_volatility + ((Math.random() - 0.5) * 0.04);
-        
+        // Actual volatility usually tracks prediction loosely in a good model
+        const actualVolatility = Math.max(0.05, predVolatility + ((Math.random() - 0.5) * 0.04));
+
         history.push({
-            date: targetDate.toISOString().split('T')[0],
-            predicted_volatility: parseFloat(forecast.forecast_volatility.toFixed(4)),
-            actual_volatility: parseFloat(actual_volatility.toFixed(4)),
-            average_sentiment: parseFloat(forecast.sentiment_features.average_sentiment.toFixed(2))
+            date: date.toISOString().split('T')[0],
+            predicted_volatility: parseFloat(predVolatility.toFixed(4)),
+            actual_volatility: parseFloat(actualVolatility.toFixed(4)),
+            average_sentiment: parseFloat(((Math.random() * 2) - 1).toFixed(2))
         });
     }
     
@@ -87,9 +91,9 @@ export const mockMlClient = {
         return generateMockForecast(symbol);
     },
     
-    getHistory: async (symbol: string, days: number) => {
+    getHistory: async (symbol: string, range: string) => {
         await new Promise(resolve => setTimeout(resolve, 300));
-        return generateMockHistory(symbol, days);
+        return generateMockHistory(symbol, range);
     },
     
     simulateForecast: async (symbol: string, hypotheticalSentiment: number, mockHeadline: string) => {

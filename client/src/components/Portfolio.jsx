@@ -8,8 +8,32 @@ import { stocksApi } from '../utils/api';
 
 import { TRACKED_SYMBOLS, INITIAL_HOLDINGS } from '../utils/constants';
 
-const LIGHT_COLORS = ['#006d35', '#00b050', '#81c784', '#00401c'];
-const DARK_COLORS  = ['#008f4c', '#00d662', '#a5d6a7', '#005927'];
+const LIGHT_COLORS = ['#0f766e', '#2563eb', '#f59e0b', '#db2777', '#7c3aed', '#16a34a'];
+const DARK_COLORS  = ['#22d3ee', '#a78bfa', '#fbbf24', '#fb7185', '#34d399', '#60a5fa'];
+
+function PortfolioPieLabel({ cx, cy, midAngle, outerRadius, percent, payload, fill, isDarkMode }) {
+  if (!payload?.symbol || percent < 0.06) return null;
+
+  const RADIAN = Math.PI / 180;
+  const radius = outerRadius + 22;
+  const x = cx + radius * Math.cos(-midAngle * RADIAN);
+  const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+  return (
+    <text
+      x={x}
+      y={y}
+      fill={fill}
+      textAnchor={x > cx ? 'start' : 'end'}
+      dominantBaseline="central"
+      fontSize={12}
+      fontWeight={700}
+      style={{ filter: isDarkMode ? 'drop-shadow(0 2px 8px rgba(0,0,0,0.45))' : 'none' }}
+    >
+      {payload.symbol}
+    </text>
+  );
+}
 
 function Portfolio({ isDarkMode = false }) {
   const [liveQuotes, setLiveQuotes]       = useState({});
@@ -161,20 +185,64 @@ function Portfolio({ isDarkMode = false }) {
           isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'
         }`}>
           <h3 className={`text-base font-semibold mb-5 m-0 ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>Distribution</h3>
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer width="100%" height={230}>
             <PieChartComponent>
-              <Pie data={enriched} cx="50%" cy="50%" outerRadius={90} dataKey="value" label={({ symbol }) => symbol} labelLine={false}>
-                {enriched.map((_, i) => <Cell key={i} fill={pieColors[i % pieColors.length]} />)}
+              <Pie
+                data={enriched}
+                cx="50%"
+                cy="50%"
+                innerRadius={54}
+                outerRadius={88}
+                paddingAngle={3}
+                cornerRadius={6}
+                dataKey="value"
+                label={(props) => (
+                  <PortfolioPieLabel
+                    {...props}
+                    fill={pieColors[props.index % pieColors.length]}
+                    isDarkMode={isDarkMode}
+                  />
+                )}
+                labelLine={false}
+                stroke={isDarkMode ? '#24262d' : '#ffffff'}
+                strokeWidth={3}
+              >
+                {enriched.map((_, i) => (
+                  <Cell key={i} fill={pieColors[i % pieColors.length]} />
+                ))}
               </Pie>
               <Tooltip
-                formatter={(v) => `$${Number(v).toFixed(2)}`}
+                formatter={(v, _, item) => [`$${Number(v).toFixed(2)}`, item?.payload?.symbol || 'Value']}
                 contentStyle={isDarkMode
-                  ? { backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '10px' }
-                  : { backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px' }
+                  ? { backgroundColor: '#25272f', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '12px', boxShadow: '0 18px 40px rgba(0,0,0,0.35)' }
+                  : { backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '12px', boxShadow: '0 12px 30px rgba(15,23,42,0.12)' }
                 }
+                itemStyle={{ color: isDarkMode ? '#f8fafc' : '#111827' }}
+                labelStyle={{ color: isDarkMode ? '#cbd5e1' : '#475569' }}
               />
             </PieChartComponent>
           </ResponsiveContainer>
+          <div className="grid grid-cols-2 gap-2">
+            {enriched.map((item, i) => (
+              <div
+                key={item.symbol}
+                className={`flex items-center justify-between gap-2 rounded-xl px-3 py-2 text-xs ${
+                  isDarkMode ? 'bg-white/5 text-slate-300' : 'bg-gray-50 text-gray-600'
+                }`}
+              >
+                <span className="flex items-center gap-2 min-w-0">
+                  <span
+                    className="h-2.5 w-2.5 rounded-full flex-shrink-0"
+                    style={{ background: pieColors[i % pieColors.length] }}
+                  />
+                  <span className="font-bold truncate">{item.symbol}</span>
+                </span>
+                <span className={`font-mono ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+                  {totalValue > 0 ? `${((item.value / totalValue) * 100).toFixed(0)}%` : '0%'}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

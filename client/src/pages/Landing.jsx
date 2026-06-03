@@ -684,16 +684,9 @@ function Footer() {
           </div>
           <span style={{ fontWeight: 700, fontSize: 16, color: '#1a1c1c', fontFamily: '"Hanken Grotesk", sans-serif' }}>Sentivvo</span>
         </div>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 32 }}>
-          {['Privacy Policy', 'Terms of Service', 'Legal Disclaimer', 'Contact Us'].map(l => (
-            <a key={l} href="#" style={{ color: '#6b7b6c', textDecoration: 'none', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: '"Hanken Grotesk", sans-serif', transition: 'color 0.2s' }}
-              onMouseEnter={e => e.currentTarget.style.color = '#1a1c1c'}
-              onMouseLeave={e => e.currentTarget.style.color = '#6b7b6c'}
-            >{l}</a>
-          ))}
-        </div>
+       
         <p style={{ fontSize: 11, color: '#6b7b6c', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: '"Hanken Grotesk", sans-serif' }}>
-          © 2024 Sentivvo Market Intelligence. All rights reserved.
+          © Sentivvo Market Intelligence. All rights reserved.
         </p>
       </div>
     </footer>

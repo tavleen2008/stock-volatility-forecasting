@@ -1077,6 +1077,7 @@ export namespace Prisma {
     provider: number
     providerId: number
     isVerified: number
+    followedStocks: number
     createdAt: number
     updatedAt: number
     _all: number
@@ -1118,6 +1119,7 @@ export namespace Prisma {
     provider?: true
     providerId?: true
     isVerified?: true
+    followedStocks?: true
     createdAt?: true
     updatedAt?: true
     _all?: true
@@ -1204,6 +1206,7 @@ export namespace Prisma {
     provider: $Enums.AuthProvider
     providerId: string | null
     isVerified: boolean
+    followedStocks: string[]
     createdAt: Date
     updatedAt: Date
     _count: UserCountAggregateOutputType | null
@@ -1234,6 +1237,7 @@ export namespace Prisma {
     provider?: boolean
     providerId?: boolean
     isVerified?: boolean
+    followedStocks?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["user"]>
@@ -1247,6 +1251,7 @@ export namespace Prisma {
     provider?: boolean
     providerId?: boolean
     isVerified?: boolean
+    followedStocks?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }, ExtArgs["result"]["user"]>
@@ -1260,6 +1265,7 @@ export namespace Prisma {
     provider?: boolean
     providerId?: boolean
     isVerified?: boolean
+    followedStocks?: boolean
     createdAt?: boolean
     updatedAt?: boolean
   }
@@ -1277,6 +1283,7 @@ export namespace Prisma {
       provider: $Enums.AuthProvider
       providerId: string | null
       isVerified: boolean
+      followedStocks: string[]
       createdAt: Date
       updatedAt: Date
     }, ExtArgs["result"]["user"]>
@@ -1680,6 +1687,7 @@ export namespace Prisma {
     readonly provider: FieldRef<"User", 'AuthProvider'>
     readonly providerId: FieldRef<"User", 'String'>
     readonly isVerified: FieldRef<"User", 'Boolean'>
+    readonly followedStocks: FieldRef<"User", 'String[]'>
     readonly createdAt: FieldRef<"User", 'DateTime'>
     readonly updatedAt: FieldRef<"User", 'DateTime'>
   }
@@ -3859,6 +3867,7 @@ export namespace Prisma {
     provider: 'provider',
     providerId: 'providerId',
     isVerified: 'isVerified',
+    followedStocks: 'followedStocks',
     createdAt: 'createdAt',
     updatedAt: 'updatedAt'
   };
@@ -4038,6 +4047,7 @@ export namespace Prisma {
     provider?: EnumAuthProviderFilter<"User"> | $Enums.AuthProvider
     providerId?: StringNullableFilter<"User"> | string | null
     isVerified?: BoolFilter<"User"> | boolean
+    followedStocks?: StringNullableListFilter<"User">
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
   }
@@ -4051,6 +4061,7 @@ export namespace Prisma {
     provider?: SortOrder
     providerId?: SortOrderInput | SortOrder
     isVerified?: SortOrder
+    followedStocks?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -4067,6 +4078,7 @@ export namespace Prisma {
     provider?: EnumAuthProviderFilter<"User"> | $Enums.AuthProvider
     providerId?: StringNullableFilter<"User"> | string | null
     isVerified?: BoolFilter<"User"> | boolean
+    followedStocks?: StringNullableListFilter<"User">
     createdAt?: DateTimeFilter<"User"> | Date | string
     updatedAt?: DateTimeFilter<"User"> | Date | string
   }, "id" | "email">
@@ -4080,6 +4092,7 @@ export namespace Prisma {
     provider?: SortOrder
     providerId?: SortOrderInput | SortOrder
     isVerified?: SortOrder
+    followedStocks?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
     _count?: UserCountOrderByAggregateInput
@@ -4099,6 +4112,7 @@ export namespace Prisma {
     provider?: EnumAuthProviderWithAggregatesFilter<"User"> | $Enums.AuthProvider
     providerId?: StringNullableWithAggregatesFilter<"User"> | string | null
     isVerified?: BoolWithAggregatesFilter<"User"> | boolean
+    followedStocks?: StringNullableListFilter<"User">
     createdAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
     updatedAt?: DateTimeWithAggregatesFilter<"User"> | Date | string
   }
@@ -4248,6 +4262,7 @@ export namespace Prisma {
     provider?: $Enums.AuthProvider
     providerId?: string | null
     isVerified?: boolean
+    followedStocks?: UserCreatefollowedStocksInput | string[]
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -4261,6 +4276,7 @@ export namespace Prisma {
     provider?: $Enums.AuthProvider
     providerId?: string | null
     isVerified?: boolean
+    followedStocks?: UserCreatefollowedStocksInput | string[]
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -4274,6 +4290,7 @@ export namespace Prisma {
     provider?: EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
     providerId?: NullableStringFieldUpdateOperationsInput | string | null
     isVerified?: BoolFieldUpdateOperationsInput | boolean
+    followedStocks?: UserUpdatefollowedStocksInput | string[]
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -4287,6 +4304,7 @@ export namespace Prisma {
     provider?: EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
     providerId?: NullableStringFieldUpdateOperationsInput | string | null
     isVerified?: BoolFieldUpdateOperationsInput | boolean
+    followedStocks?: UserUpdatefollowedStocksInput | string[]
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -4300,6 +4318,7 @@ export namespace Prisma {
     provider?: $Enums.AuthProvider
     providerId?: string | null
     isVerified?: boolean
+    followedStocks?: UserCreatefollowedStocksInput | string[]
     createdAt?: Date | string
     updatedAt?: Date | string
   }
@@ -4313,6 +4332,7 @@ export namespace Prisma {
     provider?: EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
     providerId?: NullableStringFieldUpdateOperationsInput | string | null
     isVerified?: BoolFieldUpdateOperationsInput | boolean
+    followedStocks?: UserUpdatefollowedStocksInput | string[]
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -4326,6 +4346,7 @@ export namespace Prisma {
     provider?: EnumAuthProviderFieldUpdateOperationsInput | $Enums.AuthProvider
     providerId?: NullableStringFieldUpdateOperationsInput | string | null
     isVerified?: BoolFieldUpdateOperationsInput | boolean
+    followedStocks?: UserUpdatefollowedStocksInput | string[]
     createdAt?: DateTimeFieldUpdateOperationsInput | Date | string
     updatedAt?: DateTimeFieldUpdateOperationsInput | Date | string
   }
@@ -4526,6 +4547,14 @@ export namespace Prisma {
     not?: NestedBoolFilter<$PrismaModel> | boolean
   }
 
+  export type StringNullableListFilter<$PrismaModel = never> = {
+    equals?: string[] | ListStringFieldRefInput<$PrismaModel> | null
+    has?: string | StringFieldRefInput<$PrismaModel> | null
+    hasEvery?: string[] | ListStringFieldRefInput<$PrismaModel>
+    hasSome?: string[] | ListStringFieldRefInput<$PrismaModel>
+    isEmpty?: boolean
+  }
+
   export type DateTimeFilter<$PrismaModel = never> = {
     equals?: Date | string | DateTimeFieldRefInput<$PrismaModel>
     in?: Date[] | string[] | ListDateTimeFieldRefInput<$PrismaModel>
@@ -4551,6 +4580,7 @@ export namespace Prisma {
     provider?: SortOrder
     providerId?: SortOrder
     isVerified?: SortOrder
+    followedStocks?: SortOrder
     createdAt?: SortOrder
     updatedAt?: SortOrder
   }
@@ -4799,6 +4829,10 @@ export namespace Prisma {
     _max?: NestedJsonFilter<$PrismaModel>
   }
 
+  export type UserCreatefollowedStocksInput = {
+    set: string[]
+  }
+
   export type StringFieldUpdateOperationsInput = {
     set?: string
   }
@@ -4813,6 +4847,11 @@ export namespace Prisma {
 
   export type BoolFieldUpdateOperationsInput = {
     set?: boolean
+  }
+
+  export type UserUpdatefollowedStocksInput = {
+    set?: string[]
+    push?: string | string[]
   }
 
   export type DateTimeFieldUpdateOperationsInput = {

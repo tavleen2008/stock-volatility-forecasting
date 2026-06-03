@@ -131,6 +131,7 @@ exports.Prisma.UserScalarFieldEnum = {
   provider: 'provider',
   providerId: 'providerId',
   isVerified: 'isVerified',
+  followedStocks: 'followedStocks',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 };

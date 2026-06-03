@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from '../../config/prisma';
 import config from '../../config/env';
 import { AUTH_CONSTANTS } from './auth.constants';
-import { RegisterInput, LoginInput, VerifyEmailInput, ResendCodeInput } from './auth.schemas';
+import { RegisterInput, LoginInput, VerifyEmailInput, ResendCodeInput, ForgotPasswordInput, ResetPasswordInput } from './auth.schemas';
 import { safeGet, safeSet, safeDel } from '../../config/redis';
 import { sendVerificationEmail } from '../../utils/email.service';
 
@@ -162,5 +162,62 @@ export const revokeRefreshToken = async (token: string) => {
         }
     } catch (error) {
         throw new Error('Failed to revoke refresh token');
+    }
+};
+
+export const forgotPassword = async (data: ForgotPasswordInput) => {
+    const user = await prisma.user.findUnique({
+        where: { email: data.email },
+    });
+
+    if (!user || user.provider !== 'LOCAL') {
+        // We do not throw an error if the user does not exist to prevent email enumeration attacks
+        // Just return silently
+        return;
+    }
+
+    const code = generateOTP();
+
+    // Store reset code in Redis
+    const resetData = {
+        email: data.email,
+        code,
+    };
+
+    await safeSet(`password_reset:${data.email}`, JSON.stringify(resetData), 'EX', CODE_EXPIRY_SECONDS);
+
+    // As requested, log to console instead of sending email for now
+    console.log(`\n================================`);
+    console.log(`🔑 PASSWORD RESET CODE FOR ${data.email}`);
+    console.log(`CODE: ${code}`);
+    console.log(`================================\n`);
+};
+
+export const resetPassword = async (data: ResetPasswordInput) => {
+    const resetDataStr = await safeGet(`password_reset:${data.email}`);
+    if (!resetDataStr) {
+        throw new Error('Reset code expired or invalid email');
+    }
+
+    const resetData = JSON.parse(resetDataStr);
+    
+    if (resetData.code !== data.code) {
+        throw new Error('Invalid reset code');
+    }
+
+    const hashedPassword = await bcrypt.hash(data.newPassword, 10);
+
+    await prisma.user.update({
+        where: { email: data.email },
+        data: { password: hashedPassword },
+    });
+
+    // Delete the reset code
+    await safeDel(`password_reset:${data.email}`);
+    
+    // Also revoke all refresh tokens so they are logged out of all devices
+    const user = await prisma.user.findUnique({ where: { email: data.email } });
+    if (user) {
+        await safeDel(`refresh_token:${user.id}`);
     }
 };

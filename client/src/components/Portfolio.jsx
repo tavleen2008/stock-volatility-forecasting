@@ -3,7 +3,7 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart as PieChartComponent, Pie, Cell,
 } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, PieChart, Plus, Trash2, RefreshCw } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, PieChart, Trash2, RefreshCw } from 'lucide-react';
 import { stocksApi } from '../utils/api';
 
 import { TRACKED_SYMBOLS, INITIAL_HOLDINGS } from '../utils/constants';
@@ -111,9 +111,6 @@ function Portfolio({ isDarkMode = false }) {
             }`}
           >
             <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> Refresh
-          </button>
-          <button className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-semibold shadow-sm shadow-green-500/20 transition-all">
-            <Plus size={16} /> Add Stock
           </button>
         </div>
       </div>

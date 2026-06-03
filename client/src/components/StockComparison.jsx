@@ -277,30 +277,7 @@ function StockComparison({ isDarkMode = false }) {
           </div>
         ))}
 
-        {/* Add custom ticker */}
-        <form
-          onSubmit={(e) => { e.preventDefault(); addCustom(); }}
-          className={`flex items-center gap-1 pl-2 border-l ${isDarkMode ? 'border-slate-700' : 'border-gray-200'}`}
-        >
-          <input
-            ref={inputRef}
-            value={customInput}
-            onChange={e => setCustomInput(e.target.value.toUpperCase())}
-            placeholder="+ Add ticker"
-            maxLength={8}
-            className={`w-24 text-xs px-2 py-1.5 rounded-lg border outline-none focus:border-green-400 ${
-              isDarkMode
-                ? 'bg-slate-800 border-slate-700 text-slate-200 placeholder-slate-600'
-                : 'bg-white border-gray-200 text-gray-700 placeholder-gray-400'
-            }`}
-          />
-          <button
-            type="submit"
-            className="p-1.5 rounded-lg bg-green-600 hover:bg-green-700 text-white transition-colors flex-shrink-0"
-          >
-            <Plus size={13} />
-          </button>
-        </form>
+       
       </div>
 
       {/* ── Performance badges ── */}

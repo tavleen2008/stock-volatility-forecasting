@@ -2,11 +2,15 @@ import React, { useState, useEffect } from 'react';
 import Dashboard from './Dashboard';
 import Portfolio from './Portfolio';
 import Forecasts from './Forecasts';
+import NewsFeed from './NewsFeed';
+import StockComparison from './StockComparison';
 
 const ROUTES = {
   '/portfolio': 'portfolio',
   '/forecasts': 'forecasts',
   '/volatility': 'forecasts',
+  '/news':      'news',
+  '/compare':   'compare',
 };
 
 function getPage(path) {
@@ -44,11 +48,21 @@ function MainContent({ isDarkMode }) {
   return (
     <main
       className={`flex-1 overflow-y-auto p-5 transition-colors duration-300 ${
-        isDarkMode ? 'bg-dark-bg' : 'bg-gray-50'
+        isDarkMode ? 'bg-slate-950' : 'bg-gray-50'
       }`}
     >
       {currentPage === 'portfolio'  && <Portfolio  isDarkMode={isDarkMode} />}
       {currentPage === 'forecasts'  && <Forecasts  isDarkMode={isDarkMode} />}
+      {currentPage === 'news'       && <NewsFeed   isDarkMode={isDarkMode} />}
+      {currentPage === 'compare'    && (
+        <div className="flex flex-col gap-6 animate-fade-in">
+          <div>
+            <h1 className={`text-3xl font-bold mb-0.5 ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>Stock Comparison</h1>
+            <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>Compare normalised % returns across symbols</p>
+          </div>
+          <StockComparison isDarkMode={isDarkMode} />
+        </div>
+      )}
       {currentPage === 'dashboard'  && <Dashboard  isDarkMode={isDarkMode} />}
     </main>
   );

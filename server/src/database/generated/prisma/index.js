@@ -149,7 +149,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\Users\\mpsin\\Desktop\\pleasechlja\\sentivvo\\server\\src\\database\\generated\\prisma",
+      "value": "C:\\Users\\Danish\\Downloads\\stock-volatility-forecasting-main (1)\\stock-volatility-forecasting-main\\server\\src\\database\\generated\\prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -163,7 +163,7 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\Users\\mpsin\\Desktop\\pleasechlja\\sentivvo\\server\\src\\database\\prisma\\schema.prisma",
+    "sourceFilePath": "C:\\Users\\Danish\\Downloads\\stock-volatility-forecasting-main (1)\\stock-volatility-forecasting-main\\server\\src\\database\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
@@ -177,7 +177,7 @@ const config = {
     "db"
   ],
   "activeProvider": "postgresql",
-  "postinstall": false,
+  "postinstall": true,
   "inlineDatasources": {
     "db": {
       "url": {

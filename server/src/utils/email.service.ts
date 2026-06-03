@@ -37,7 +37,7 @@ export const sendVerificationEmail = async (to: string, code: string) => {
     if (!transporter) {
         await initializeTransporter();
     }
-    
+
     const info = await transporter.sendMail({
         from: '"Stock Volatility App" <noreply@stockvolatility.com>',
         to,
@@ -48,7 +48,7 @@ export const sendVerificationEmail = async (to: string, code: string) => {
 
     console.log("Message sent: %s", info.messageId);
     console.log("🚀 [LOCAL DEV] Verification Code is:", code);
-    
+
     // Preview only available when sending through an Ethereal account
     const previewUrl = nodemailer.getTestMessageUrl(info);
     if (previewUrl) {

@@ -32,11 +32,29 @@ export const authService = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, email, password }),
       });
-      const data = await res.json();
-      if (!res.ok) return { success: false, error: data.message };
+      let data;
+      try { data = await res.json(); } catch { data = null; }
+      if (!res.ok) return { success: false, error: data?.message || res.statusText || 'Request failed', status: res.status };
       return { success: true };
     } catch {
       return { success: false, error: 'Network error — is the server running?' };
+    }
+  },
+
+  /** Resend OTP verification code */
+  resendCode: async (email) => {
+    try {
+      const res = await fetch(`${API_URL}/api/auth/register/resend-code`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      let data;
+      try { data = await res.json(); } catch { data = null; }
+      if (!res.ok) return { success: false, error: data?.message || res.statusText || 'Request failed', status: res.status };
+      return { success: true, message: data?.message };
+    } catch {
+      return { success: false, error: 'Network error.' };
     }
   },
 
@@ -49,8 +67,9 @@ export const authService = {
         credentials: 'include',
         body: JSON.stringify({ email, code }),
       });
-      const data = await res.json();
-      if (!res.ok) return { success: false, error: data.message };
+      let data;
+      try { data = await res.json(); } catch { data = null; }
+      if (!res.ok) return { success: false, error: data?.message || res.statusText || 'Request failed', status: res.status };
 
       localStorage.setItem(TOKEN_KEY, data.token);
       localStorage.setItem(SESSION_KEY, JSON.stringify(data.user));

@@ -3,9 +3,7 @@ import { z } from 'zod';
 import * as userService from './user.service';
 import { changePasswordSchema, followStockSchema, updateProfileSchema } from './user.schemas';
 
-export const getUsers = (_req: Request, res: Response) => {
-    res.json({ users: [] });
-};
+
 
 export const updateProfile = async (req: Request, res: Response, next: NextFunction) => {
     try {

@@ -36,6 +36,12 @@ This document lists the HTTP endpoints provided by the server, grouped by route 
   - Controller: `refresh`
   - Controller: [server/src/modules/auth/auth.controller.ts](server/src/modules/auth/auth.controller.ts#L140)
 
+- POST `/api/auth/forgot-password` — Request a password reset code.
+  - Controller: `forgotPassword`
+
+- POST `/api/auth/reset-password` — Reset password using the code sent via email.
+  - Controller: `resetPassword`
+
 - POST `/api/auth/logout` — Revoke refresh token and clear cookie.
   - Controller: `logout`
   - Controller: [server/src/modules/auth/auth.controller.ts](server/src/modules/auth/auth.controller.ts#L160)
@@ -55,7 +61,18 @@ This document lists the HTTP endpoints provided by the server, grouped by route 
 - GET `/api/users/` — (Placeholder) returns `{ users: [] }`.
   - Controller: `getUsers`
   - File: [server/src/modules/users/user.routes.ts](server/src/modules/users/user.routes.ts#L1)
-  - Controller: [server/src/modules/users/user.controller.ts](server/src/modules/users/user.controller.ts#L1)
+
+- PUT `/api/users/profile` — Update the authenticated user's profile (e.g. name). Requires auth.
+  - Controller: `updateProfile`
+
+- POST `/api/users/change-password` — Change password for the authenticated user. Requires auth.
+  - Controller: `changePassword`
+
+- POST `/api/users/follow/:symbol` — Add a stock to the user's personal watchlist. Requires auth.
+  - Controller: `followStock`
+
+- DELETE `/api/users/follow/:symbol` — Remove a stock from the user's personal watchlist. Requires auth.
+  - Controller: `unfollowStock`
 
 ---
 

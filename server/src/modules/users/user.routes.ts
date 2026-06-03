@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getUsers, changePassword, followStock, unfollowStock, updateProfile } from './user.controller';
+import {  changePassword, followStock, unfollowStock, updateProfile } from './user.controller';
 import { authMiddleware } from '../../middleware/auth.middleware';
 
 const router = Router();
@@ -7,7 +7,6 @@ const router = Router();
 // Protected routes (User must be logged in)
 router.use(authMiddleware);
 
-router.get('/', getUsers);
 router.put('/profile', updateProfile);
 router.post('/change-password', changePassword);
 router.post('/follow/:symbol', followStock);

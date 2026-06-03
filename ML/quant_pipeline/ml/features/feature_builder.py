@@ -78,10 +78,18 @@ class FeatureBuilder:
         frame["realized_quarticity"] = frame["log_returns"].pow(4).rolling(5, min_periods=1).mean().fillna(0.0)
 
         sentiment = sentiment_daily_df.copy()
-        if not sentiment.empty:
+        
+        # Ensure 'date' is a column if it's currently the index
+        if "date" not in sentiment.columns and (sentiment.index.name == "date" or "date" in getattr(sentiment.index, "names", [])):
+            sentiment = sentiment.reset_index()
+
+        if not sentiment.empty and "date" in sentiment.columns:
             sentiment["date"] = pd.to_datetime(sentiment["date"]).dt.floor("D")
-        frame["date"] = pd.to_datetime(frame["date"]).dt.floor("D")
-        frame = frame.merge(sentiment, on="date", how="left")
+            frame["date"] = pd.to_datetime(frame["date"]).dt.floor("D")
+            frame = frame.merge(sentiment, on="date", how="left")
+        else:
+            logger.warning("Sentiment data empty or missing 'date' column; skipping merge")
+
 
         sentiment_cols = [
             "mean_sentiment",
@@ -96,7 +104,8 @@ class FeatureBuilder:
         for col in sentiment_cols:
             if col not in frame.columns:
                 frame[col] = 0.0
-            frame[col] = frame[col].fillna(0.0)
+                frame[col] = frame[col].fillna(0.0).infer_objects(copy=False)
+
 
         frame["future_realized_variance"] = frame["realized_variance"].shift(-forecast_horizon)
         frame["future_realized_volatility"] = frame["realized_volatility"].shift(-forecast_horizon)

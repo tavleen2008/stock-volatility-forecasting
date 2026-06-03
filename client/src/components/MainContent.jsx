@@ -4,6 +4,7 @@ import Portfolio from './Portfolio';
 import Forecasts from './Forecasts';
 import NewsFeed from './NewsFeed';
 import StockComparison from './StockComparison';
+import SecurityAnalysis from './SecurityAnalysis';
 
 const ROUTES = {
   '/portfolio': 'portfolio',
@@ -11,6 +12,8 @@ const ROUTES = {
   '/volatility': 'forecasts',
   '/news':      'news',
   '/compare':   'compare',
+  '/snapshot':  'security',
+  '/security':  'security',
 };
 
 function getPage(path) {
@@ -54,6 +57,7 @@ function MainContent({ isDarkMode }) {
       {currentPage === 'portfolio'  && <Portfolio  isDarkMode={isDarkMode} />}
       {currentPage === 'forecasts'  && <Forecasts  isDarkMode={isDarkMode} />}
       {currentPage === 'news'       && <NewsFeed   isDarkMode={isDarkMode} />}
+      {currentPage === 'security'   && <SecurityAnalysis isDarkMode={isDarkMode} />}
       {currentPage === 'compare'    && (
         <div className="flex flex-col gap-6 animate-fade-in">
           <div>

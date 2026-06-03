@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronDown, Home, TrendingUp, Eye, BarChart3, BookOpen, Briefcase, Zap } from 'lucide-react';
+import { ChevronDown, Home, TrendingUp, Eye, BarChart3, BookOpen, Briefcase, Zap, Activity, Building2, Gauge, Layers } from 'lucide-react';
 
 function Sidebar({ isOpen, isDarkMode }) {
   const [expandedSections, setExpandedSections] = useState(['Favorites']);
@@ -44,12 +44,12 @@ function Sidebar({ isOpen, isDarkMode }) {
     {
       title: 'Security Analysis',
       items: [
-        { label: 'Snapshots', href: '/', icon: <Eye size={18} /> },
-        { label: 'Overview', href: '/snapshot/s', badge: 's' },
-        { label: 'Description', href: '/snapshot/des', badge: 'des' },
-        { label: 'Percentile Rank', href: '/snapshot/rank', badge: 'rank' },
-        { label: 'Exposure', href: '/snapshot/fxp', badge: 'fxp' },
-        { label: 'Holdings', href: '/snapshot/hds', badge: 'hds' },
+        { label: 'Snapshots', href: '/snapshot', icon: <Eye size={18} /> },
+        { label: 'Overview', href: '/snapshot/s', icon: <Activity size={18} /> },
+        { label: 'Description', href: '/snapshot/des', icon: <Building2 size={18} /> },
+        { label: 'Percentile Rank', href: '/snapshot/rank', icon: <Gauge size={18} /> },
+        { label: 'Exposure', href: '/snapshot/fxp', icon: <Layers size={18} /> },
+        { label: 'Holdings', href: '/snapshot/hds', icon: <Briefcase size={18} /> },
       ],
     },
     {
@@ -97,7 +97,9 @@ function Sidebar({ isOpen, isDarkMode }) {
                 {section.items.map((item, idx) => {
                   const active = item.href === '/dashboard'
                     ? currentPath === '/dashboard' || currentPath === '/dashboard/'
-                    : currentPath.includes(item.href);
+                    : item.href === '/snapshot'
+                      ? currentPath === '/snapshot' || currentPath === '/snapshot/'
+                      : currentPath.includes(item.href);
 
                   return (
                   <li key={idx}>

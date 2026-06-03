@@ -1,6 +1,9 @@
 FROM python:3.11-slim
 
-WORKDIR /app
+WORKDIR /project
+
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
 
 RUN pip install uv
 
@@ -9,6 +12,8 @@ RUN uv sync --frozen
 
 COPY . .
 
+WORKDIR /project/ML/quant_pipeline
+
 EXPOSE 8080
 
-CMD ["uvicorn", "ML.quant_pipeline.endpoint:app", "--host", "0.0.0.0", "--port", "8080"]
+CMD ["uvicorn", "endpoint:app", "--host", "0.0.0.0", "--port", "8080"]

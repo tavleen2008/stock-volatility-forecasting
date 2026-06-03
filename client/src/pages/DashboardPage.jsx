@@ -9,12 +9,16 @@ const TOKEN_KEY = 'svf_access_token';
 const SESSION_KEY = 'sentivvo_current_session';
 
 function DashboardPage() {
-  const [isDarkMode, setIsDarkMode] = React.useState(false);
+  const [isDarkMode, setIsDarkMode] = React.useState(() => localStorage.getItem('sentivvo_theme') === 'dark');
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
   const [user, setUser] = useState(() => authService.getCurrentUser());
 
   const toggleTheme = () => {
-    setIsDarkMode(prev => !prev);
+    setIsDarkMode(prev => {
+      const next = !prev;
+      localStorage.setItem('sentivvo_theme', next ? 'dark' : 'light');
+      return next;
+    });
   };
 
   // Fetch latest user profile from the backend to ensure correct name is shown
@@ -43,7 +47,7 @@ function DashboardPage() {
   }, []);
 
   return (
-    <div className={`flex h-screen overflow-hidden ${isDarkMode ? 'bg-slate-950' : 'bg-gray-50'}`}>
+    <div className={`sv-app-shell flex h-screen overflow-hidden ${isDarkMode ? 'sv-dashboard-dark' : 'bg-gray-50'}`}>
       <Sidebar isOpen={sidebarOpen} isDarkMode={isDarkMode} />
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
         <Header

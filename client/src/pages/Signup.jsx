@@ -431,16 +431,9 @@ function Signup() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <span style={{ fontWeight: 700, fontSize: 14, color: '#006d35', fontFamily: '"Hanken Grotesk", sans-serif' }}>Sentivvo</span>
-          <span style={{ fontSize: 12, color: '#6b7b6c', fontFamily: '"Hanken Grotesk", sans-serif' }}>© 2024 Sentivvo Market Intelligence. All rights reserved.</span>
+          <span style={{ fontSize: 12, color: '#6b7b6c', fontFamily: '"Hanken Grotesk", sans-serif' }}>© Sentivvo Market Intelligence. All rights reserved.</span>
         </div>
-        <div style={{ display: 'flex', gap: 20 }}>
-          {['Privacy Policy', 'Terms of Service', 'Support', 'Contact'].map(l => (
-            <a key={l} href="#" style={{ fontSize: 12, color: '#6b7b6c', textDecoration: 'none', fontFamily: '"Hanken Grotesk", sans-serif' }}
-              onMouseEnter={e => e.currentTarget.style.color = '#006d35'}
-              onMouseLeave={e => e.currentTarget.style.color = '#6b7b6c'}
-            >{l}</a>
-          ))}
-        </div>
+      
       </footer>
     </div>
   );

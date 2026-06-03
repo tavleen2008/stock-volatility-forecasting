@@ -1,8 +1,20 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ChevronDown, Home, TrendingUp, Eye, BarChart3, BookOpen, Briefcase, Zap } from 'lucide-react';
 
 function Sidebar({ isOpen, isDarkMode }) {
   const [expandedSections, setExpandedSections] = useState(['Favorites']);
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+
+  useEffect(() => {
+    const syncPath = () => setCurrentPath(window.location.pathname);
+    const syncPathAfterClick = () => setTimeout(syncPath, 0);
+    window.addEventListener('popstate', syncPath);
+    document.addEventListener('click', syncPathAfterClick);
+    return () => {
+      window.removeEventListener('popstate', syncPath);
+      document.removeEventListener('click', syncPathAfterClick);
+    };
+  }, []);
 
   const toggleSection = (section) => {
     setExpandedSections((prev) =>
@@ -62,10 +74,7 @@ function Sidebar({ isOpen, isDarkMode }) {
     return <div className="w-0 transition-all duration-300 ease-in-out" />;
   }
 
-  const getBgColor    = () => isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200';
-  const getTextColor  = () => isDarkMode ? 'text-white' : 'text-gray-900';
-  const getHoverColor = () => isDarkMode ? 'hover:bg-slate-800' : 'hover:bg-green-50';
-  const getDividerColor = () => isDarkMode ? 'border-slate-800' : 'border-gray-200';
+  const getBgColor    = () => isDarkMode ? 'sv-sidebar bg-slate-900 border-slate-800' : 'bg-white border-gray-200';
 
   return (
     <aside className={`w-72 border-r overflow-y-auto transition-all duration-300 ease-in-out ${getBgColor()}`}>
@@ -85,11 +94,17 @@ function Sidebar({ isOpen, isDarkMode }) {
 
             {expandedSections.includes(section.title) && (
               <ul className="list-none py-1 px-0 m-0">
-                {section.items.map((item, idx) => (
+                {section.items.map((item, idx) => {
+                  const active = item.href === '/dashboard'
+                    ? currentPath === '/dashboard' || currentPath === '/dashboard/'
+                    : currentPath.includes(item.href);
+
+                  return (
                   <li key={idx}>
                     <a 
                       href={item.href} 
                       className={`flex items-center gap-2.5 px-4 py-2 text-sm no-underline transition-all border-l-3 border-transparent
+                        ${active ? (isDarkMode ? 'sv-nav-active' : 'sv-nav-active-light') : ''}
                         ${isDarkMode
                           ? 'text-slate-400 hover:text-white hover:bg-slate-800 hover:border-l-green-400'
                           : 'text-gray-600 hover:text-green-700 hover:bg-green-50 hover:border-l-green-500'}`}
@@ -99,7 +114,8 @@ function Sidebar({ isOpen, isDarkMode }) {
                       {item.badge && <span className={`inline-block py-0.5 px-1.5 rounded text-xs ml-auto ${isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-gray-200 text-gray-600'}`}>{item.badge}</span>}
                     </a>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             )}
           </div>

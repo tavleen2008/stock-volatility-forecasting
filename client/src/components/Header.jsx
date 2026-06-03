@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Menu, HelpCircle, LogOut, Moon, Sun, User } from 'lucide-react';
+import React from 'react';
+import { Activity, Menu, LogOut, Moon, Sun, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { authService } from '../services/auth';
 
@@ -21,7 +21,7 @@ function Header({ onToggleSidebar, isDarkMode, onToggleTheme, user: userProp }) 
     || 'User';
 
   /* ── dark-mode class helpers ─────────────────────────────────── */
-  const hdrBg   = isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200';
+  const hdrBg   = isDarkMode ? 'sv-topbar bg-slate-900 border-slate-800' : 'bg-white border-gray-200';
   const textMain = isDarkMode ? 'text-slate-100' : 'text-gray-900';
   const textSub  = isDarkMode ? 'text-slate-400' : 'text-gray-500';
 
@@ -38,11 +38,22 @@ function Header({ onToggleSidebar, isDarkMode, onToggleTheme, user: userProp }) 
         >
           <Menu size={24} />
         </button>
-        <div className={`flex items-center gap-2 font-semibold text-sm whitespace-nowrap transition-colors duration-300 ${textMain}`}>
-          <div className="w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded flex items-center justify-center font-bold text-sm text-white">
-            S
+        <div className={`group flex items-center gap-3 whitespace-nowrap transition-colors duration-300 ${textMain}`}>
+          <div className={`relative w-10 h-10 rounded-2xl flex items-center justify-center overflow-hidden ${
+            isDarkMode
+              ? 'bg-gradient-to-br from-emerald-400 via-green-600 to-teal-800 shadow-lg shadow-emerald-950/40'
+              : 'bg-gradient-to-br from-green-500 via-emerald-600 to-green-800 shadow-md shadow-green-600/20'
+          }`}>
+            <div className="absolute inset-px rounded-2xl bg-white/10" />
+            <Activity size={19} className="relative text-white" strokeWidth={2.6} />
+            <span className="absolute right-1.5 top-1.5 h-1.5 w-1.5 rounded-full bg-lime-300 shadow-[0_0_10px_rgba(190,242,100,0.9)]" />
           </div>
-          <span>Sentivvo</span>
+          <div className="leading-tight">
+            <div className={`text-[15px] font-extrabold tracking-wide ${isDarkMode ? 'text-white' : 'text-gray-950'}`}>
+              Senti<span className={isDarkMode ? 'text-emerald-300' : 'text-green-700'}>vvo</span>
+            </div>
+            
+          </div>
         </div>
       </div>
 

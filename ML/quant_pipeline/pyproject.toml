@@ -12,6 +12,7 @@ dependencies = [
   "numpy>=1.26.4",
   "sqlalchemy>=2.0.30",
   "psycopg[binary]>=3.1.19",
+  "fastapi>=0.105.0",
   "pydantic>=2.7.1",
   "pydantic-settings>=2.2.1",
   "requests>=2.32.2",
@@ -26,7 +27,8 @@ dependencies = [
   "great-expectations>=0.18.14",
   "evidently>=0.4.24",
   "joblib>=1.4.2",
-  "python-dateutil>=2.9.0"
+  "python-dateutil>=2.9.0",
+  "uvicorn>=0.34.0",
 ]
 
 [project.optional-dependencies]

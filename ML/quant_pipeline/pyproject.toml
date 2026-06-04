@@ -11,7 +11,7 @@ dependencies = [
   "pandas>=2.2.2",
   "numpy>=1.26.4",
   "sqlalchemy>=2.0.30",
-  "psycopg[binary]>=3.1.19",
+  "psycopg2-binary>=2.9.9",
   "fastapi>=0.105.0",
   "pydantic>=2.7.1",
   "pydantic-settings>=2.2.1",
@@ -29,10 +29,14 @@ dependencies = [
   "uvicorn>=0.34.0",
   "python-dotenv>=1.0.0",
   "pandas-market-calendars>=5.4.0",
+<<<<<<< HEAD
   "matplotlib>=3.10.9",
   "datasets>=4.8.5",
   "cachetools>=7.1.4",
   "huggingface-hub>=1.16.1",
+=======
+  "cachetools>=7.1.4",
+>>>>>>> 332dd19022ab188928c37e74f25b67dd937b5752
 ]
 
 [project.optional-dependencies]

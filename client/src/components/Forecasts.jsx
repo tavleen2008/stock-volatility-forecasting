@@ -3,8 +3,9 @@ import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   AreaChart, Area, ReferenceLine,
 } from 'recharts';
-import { AlertTriangle, RefreshCw, TrendingUp, TrendingDown, Activity, BarChart2 } from 'lucide-react';
+import { AlertTriangle, RefreshCw, TrendingUp, TrendingDown, Activity, BarChart2, Zap, ShieldCheck, Newspaper } from 'lucide-react';
 import { forecastApi } from '../utils/api';
+import { timeAgo } from '../utils/helpers';
 
 import { TRACKED_SYMBOLS } from '../utils/constants';
 
@@ -12,14 +13,14 @@ const getSignalConfig = (isDarkMode) => ({
   bullish: {
     label: 'Bullish',
     icon: '↑',
-    textColor: isDarkMode ? 'text-emerald-450' : 'text-emerald-700',
+    textColor: isDarkMode ? 'text-emerald-455' : 'text-emerald-750',
     bg: isDarkMode ? 'bg-emerald-950/40 border-emerald-900/50' : 'bg-emerald-50 border-emerald-200',
     dot: 'bg-emerald-500',
   },
   bearish: {
     label: 'Bearish',
     icon: '↓',
-    textColor: isDarkMode ? 'text-red-400' : 'text-red-700',
+    textColor: isDarkMode ? 'text-red-400' : 'text-red-705',
     bg: isDarkMode ? 'bg-red-950/40 border-red-900/50' : 'bg-red-50 border-red-200',
     dot: 'bg-red-500',
   },
@@ -35,7 +36,7 @@ const getSignalConfig = (isDarkMode) => ({
 const getRiskStyle = (isDarkMode) => ({
   low:    { color: isDarkMode ? 'text-emerald-400' : 'text-emerald-600', bg: isDarkMode ? 'bg-emerald-950/50 text-emerald-400' : 'bg-emerald-50 text-emerald-700' },
   medium: { color: isDarkMode ? 'text-amber-400' : 'text-amber-600',   bg: isDarkMode ? 'bg-amber-950/50 text-amber-400' : 'bg-amber-50 text-amber-700' },
-  high:   { color: isDarkMode ? 'text-red-400' : 'text-red-600',     bg: isDarkMode ? 'bg-red-950/50 text-red-400' : 'bg-red-50 text-red-700' },
+  high:   { color: isDarkMode ? 'text-red-400' : 'text-red-650',     bg: isDarkMode ? 'bg-red-950/50 text-red-400' : 'bg-red-50 text-red-700' },
 });
 
 function MetricCard({ label, value, sub, textColor, icon: Icon, isDarkMode }) {
@@ -64,16 +65,56 @@ function Forecasts({ isDarkMode = false }) {
   const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState(null);
 
+  const [accuracyData, setAccuracyData] = useState(null);
+  const [accuracyLoading, setAccuracyLoading] = useState(false);
+  const [accuracyRange, setAccuracyRange] = useState('1mo');
+  const [newsImpactData, setNewsImpactData] = useState(null);
+  const [newsImpactLoading, setNewsImpactLoading] = useState(false);
+
   const loadForecast = useCallback(async (sym) => {
     setLoading(true); setError(null); setForecast(null);
     try {
       const data = await forecastApi.get(sym);
-      setForecast(data.forecast);
+      setForecast(data.forecast || data);
     } catch (e) { setError(e.message); }
     finally     { setLoading(false); }
   }, []);
 
-  useEffect(() => { loadForecast(symbol); }, [symbol, loadForecast]);
+  const loadAccuracy = useCallback(async (sym, rng) => {
+    setAccuracyLoading(true);
+    try {
+      const data = await forecastApi.accuracy(sym, rng);
+      setAccuracyData(data);
+    } catch (e) {
+      console.error('Accuracy fetch failed:', e.message);
+      setAccuracyData(null);
+    } finally {
+      setAccuracyLoading(false);
+    }
+  }, []);
+
+  const loadNewsImpact = useCallback(async (sym) => {
+    setNewsImpactLoading(true);
+    try {
+      const data = await forecastApi.newsImpact(sym);
+      setNewsImpactData(data);
+    } catch (e) {
+      console.error('News impact fetch failed:', e.message);
+      setNewsImpactData(null);
+    } finally {
+      setNewsImpactLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadForecast(symbol);
+    loadAccuracy(symbol, accuracyRange);
+    loadNewsImpact(symbol);
+  }, [symbol, loadForecast, loadAccuracy, loadNewsImpact, accuracyRange]);
+
+  const handleAccuracyRangeChange = (rng) => {
+    setAccuracyRange(rng);
+  };
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -93,29 +134,10 @@ function Forecasts({ isDarkMode = false }) {
           <h1 className={`text-3xl font-bold mb-0.5 ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>Volatility Forecast</h1>
           <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>Historical vol · RSI · SMA signals · Expected price range</p>
         </div>
+        </div>
 
-        {/* Symbol search */}
-        <form onSubmit={handleSearch} className="flex gap-2">
-          <div className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 shadow-sm transition-colors ${
-            isDarkMode ? 'border-slate-800 bg-slate-900' : 'bg-white border-gray-200'
-          }`}>
-            <input
-              value={inputSymbol}
-              onChange={(e) => setInputSymbol(e.target.value.toUpperCase())}
-              placeholder="Ticker (e.g. TSLA)"
-              className={`bg-transparent border-none outline-none text-sm w-28 ${
-                isDarkMode ? 'text-slate-100 placeholder-slate-500' : 'text-gray-900 placeholder-gray-405'
-              }`}
-            />
-          </div>
-          <button
-            type="submit"
-            className="px-4 py-2.5 rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-semibold shadow-sm shadow-green-500/20 transition-all"
-          >
-            Analyse
-          </button>
-        </form>
-      </div>
+
+    
 
       {/* Quick-pick chips */}
       <div className="flex flex-wrap gap-2">
@@ -206,6 +228,26 @@ function Forecasts({ isDarkMode = false }) {
             />
           </div>
 
+          {/* ML Predictor Insights */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <MetricCard
+              label="ML Forecast Volatility"
+              value={forecast.forecast_volatility != null ? `${(forecast.forecast_volatility * 100).toFixed(2)}%` : '—'}
+              sub={forecast.forecast_volatility != null ? `Model predicted volatility` : 'No ML prediction available'}
+              textColor={forecast.forecast_volatility != null ? 'text-blue-500' : 'text-slate-400'}
+              icon={Zap}
+              isDarkMode={isDarkMode}
+            />
+            <MetricCard
+              label="ML Confidence Score"
+              value={forecast.confidence_score != null ? `${(forecast.confidence_score * 100).toFixed(1)}%` : '—'}
+              sub={forecast.confidence_score != null ? `Model confidence rating` : 'No ML prediction available'}
+              textColor={forecast.confidence_score != null ? (forecast.confidence_score > 0.75 ? 'text-emerald-500' : forecast.confidence_score > 0.5 ? 'text-amber-500' : 'text-red-500') : 'text-slate-400'}
+              icon={ShieldCheck}
+              isDarkMode={isDarkMode}
+            />
+          </div>
+
           {/* Expected ranges */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[
@@ -272,6 +314,135 @@ function Forecasts({ isDarkMode = false }) {
               <span><span className="text-slate-400 font-bold">── </span>SMA 50</span>
               <span><span className="text-green-500 font-bold">── </span>Price</span>
             </div>
+          </div>
+
+          {/* Accuracy Chart Section */}
+          <div className={`border rounded-2xl p-5 shadow-sm ${
+            isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'
+          }`}>
+            <div className="flex flex-wrap justify-between items-center mb-5 gap-3">
+              <div>
+                <h3 className={`text-base font-semibold m-0 ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>
+                  Volatility Accuracy Backtesting — {forecast.symbol}
+                </h3>
+                {accuracyData && (
+                  <p className={`text-xs mt-1 ${isDarkMode ? 'text-slate-400' : 'text-gray-550'}`}>
+                    Overall Model Accuracy: <strong className={isDarkMode ? 'text-green-400' : 'text-green-600'}>{accuracyData.accuracy_score}%</strong> (MAE: {accuracyData.mean_absolute_error})
+                  </p>
+                )}
+              </div>
+              
+              {/* Range Selector */}
+              <div className="flex gap-1">
+                {['5d', '1mo', '3mo', '1y'].map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => handleAccuracyRangeChange(r)}
+                    className={`px-3 py-1.5 text-xs font-semibold rounded-lg border cursor-pointer transition-all ${
+                      accuracyRange === r
+                        ? 'bg-green-600 border-green-600 text-white shadow-sm'
+                        : isDarkMode
+                          ? 'border-slate-700 text-slate-400 hover:border-green-500 hover:text-green-400'
+                          : 'border-gray-200 text-gray-500 hover:border-green-300 hover:text-green-650'
+                    }`}
+                  >
+                    {r.toUpperCase()}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {accuracyLoading ? (
+              <div className={`flex items-center justify-center h-[260px] text-sm ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>Loading accuracy data…</div>
+            ) : !accuracyData || !accuracyData.data || accuracyData.data.length === 0 ? (
+              <div className={`flex items-center justify-center h-[260px] text-sm ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>No accuracy backtesting data available</div>
+            ) : (
+              <ResponsiveContainer width="100%" height={260}>
+                <LineChart data={accuracyData.data} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#334155' : '#f1f5f9'} />
+                  <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} />
+                  <YAxis stroke="#94a3b8" tick={{ fontSize: 10 }} tickFormatter={v => `${(v * 100).toFixed(0)}%`} />
+                  <Tooltip
+                    contentStyle={isDarkMode
+                      ? { backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '10px', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }
+                      : { backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }
+                    }
+                    labelStyle={{ color: isDarkMode ? '#f1f5f9' : '#0f172a', fontWeight: 600 }}
+                    formatter={(v) => [`${(Number(v) * 100).toFixed(2)}%`]}
+                  />
+                  <Line type="monotone" dataKey="predicted_volatility" name="Predicted Volatility" stroke="#3b82f6" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="actual_volatility" name="Actual Volatility" stroke="#22c55e" strokeWidth={2} dot={false} />
+                </LineChart>
+              </ResponsiveContainer>
+            )}
+            <div className={`flex gap-6 mt-3 text-xs ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+              <span><span className="text-blue-500 font-bold">── </span>Predicted Volatility</span>
+              <span><span className="text-green-500 font-bold">── </span>Actual Volatility</span>
+            </div>
+          </div>
+
+          {/* Sentiment News Impact Feed */}
+          <div className={`border rounded-2xl p-5 shadow-sm ${
+            isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'
+          }`}>
+            <div className="flex items-center gap-2 mb-4">
+              <Newspaper size={18} className="text-green-500" />
+              <h3 className={`text-base font-semibold m-0 ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>
+                Sentiment Impact News Feed — {forecast.symbol}
+              </h3>
+            </div>
+            
+            {newsImpactLoading ? (
+              <div className={`flex items-center justify-center h-48 text-sm ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>Loading impact feed…</div>
+            ) : !newsImpactData || !newsImpactData.top_news || newsImpactData.top_news.length === 0 ? (
+              <div className={`flex items-center justify-center h-48 text-sm ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>No recent high-impact articles analyzed for {forecast.symbol}</div>
+            ) : (
+              <div className="space-y-3.5 max-h-[420px] overflow-y-auto pr-1">
+                {newsImpactData.top_news.map((n, idx) => {
+                  const isPos = n.sentiment_label?.toLowerCase() === 'positive' || n.sentiment_label?.toLowerCase() === 'bullish' || n.sentiment_score > 0.05;
+                  const isNeg = n.sentiment_label?.toLowerCase() === 'negative' || n.sentiment_label?.toLowerCase() === 'bearish' || n.sentiment_score < -0.05;
+                  
+                  const pillBg = isPos
+                    ? (isDarkMode ? 'bg-emerald-950/60 text-emerald-450 border border-emerald-900/50' : 'bg-emerald-50 text-emerald-700 border border-emerald-100')
+                    : isNeg
+                      ? (isDarkMode ? 'bg-rose-950/60 text-rose-455 border border-rose-900/50' : 'bg-red-50 text-red-750 border border-red-100')
+                      : (isDarkMode ? 'bg-slate-850 text-slate-400 border border-slate-800' : 'bg-gray-50 text-gray-500 border border-gray-100');
+
+                  return (
+                    <div 
+                      key={n.id || n.articleUrl || idx}
+                      className={`p-4 rounded-xl border transition-colors ${
+                        isDarkMode ? 'bg-slate-900/50 border-slate-800/80 hover:bg-slate-800/30' : 'bg-gray-50/50 border-gray-100 hover:bg-gray-100/30'
+                      }`}
+                    >
+                      <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
+                        <span className={`text-xs px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider ${pillBg}`}>
+                          {n.sentiment_label || (isPos ? 'Bullish' : isNeg ? 'Bearish' : 'Neutral')}
+                        </span>
+                        <div className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-gray-405'} font-medium`}>
+                          Impact Score: <span className="font-bold">{Math.abs(n.sentiment_score).toFixed(2)}</span>
+                        </div>
+                      </div>
+                      <a 
+                        href={n.url || n.articleUrl} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className={`text-sm font-semibold hover:underline block leading-snug mb-2 ${
+                          isDarkMode ? 'text-slate-100 hover:text-green-400' : 'text-gray-900 hover:text-green-600'
+                        }`}
+                      >
+                        {n.title}
+                      </a>
+                      <div className="flex items-center gap-3 text-xs">
+                        <span className={`font-semibold ${isDarkMode ? 'text-slate-400' : 'text-gray-650'}`}>{n.source || 'Market News'}</span>
+                        <span className={isDarkMode ? 'text-slate-600' : 'text-gray-300'}>•</span>
+                        <span className={isDarkMode ? 'text-slate-500' : 'text-gray-400'}>{timeAgo(n.publishedAt || n.date)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </>
       )}

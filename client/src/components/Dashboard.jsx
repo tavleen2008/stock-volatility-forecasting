@@ -3,8 +3,8 @@ import {
   AreaChart, Area, BarChart, Bar,
   XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts';
-import { TrendingUp, TrendingDown, DollarSign, Activity, RefreshCw, ExternalLink, Newspaper } from 'lucide-react';
-import { stocksApi, newsApi } from '../utils/api';
+import { TrendingUp, TrendingDown, DollarSign, Activity, RefreshCw, ExternalLink, Newspaper, Award, Zap } from 'lucide-react';
+import { stocksApi, newsApi, marketApi, dashboardApi } from '../utils/api';
 import StockComparison from './StockComparison';
 import StarButton from './StarButton';
 import { useWatchlist } from '../hooks/useWatchlist';
@@ -142,6 +142,12 @@ function Dashboard({ isDarkMode = false }) {
   const [etTime, setEtTime] = useState('');
   const [nextEvent, setNextEvent] = useState('');
 
+  const [marketMood, setMarketMood] = useState(null);
+  const [moodLoading, setMoodLoading] = useState(true);
+  const [opportunities, setOpportunities] = useState([]);
+  const [oppLoading, setOppLoading] = useState(true);
+  const [welcomeMsg, setWelcomeMsg] = useState('');
+
   const loadStocks = useCallback(async () => {
     setLoading(true); setError(null);
     try {
@@ -160,7 +166,37 @@ function Dashboard({ isDarkMode = false }) {
     finally { setHistLoading(false); }
   }, [selectedSymbol, range]);
 
-  useEffect(() => { loadStocks(); }, [loadStocks]);
+  const loadMarketMood = useCallback(async () => {
+    setMoodLoading(true);
+    try {
+      const data = await marketApi.mood();
+      setMarketMood(data);
+    } catch (e) {
+      console.error('Market mood fetch failed:', e.message);
+    } finally {
+      setMoodLoading(false);
+    }
+  }, []);
+
+  const loadDashboardHome = useCallback(async () => {
+    setOppLoading(true);
+    try {
+      const data = await dashboardApi.home();
+      setOpportunities(data?.top_opportunities || []);
+      setWelcomeMsg(data?.dashboard_message || '');
+    } catch (e) {
+      console.error('Dashboard home fetch failed:', e.message);
+    } finally {
+      setOppLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadStocks();
+    loadMarketMood();
+    loadDashboardHome();
+  }, [loadStocks, loadMarketMood, loadDashboardHome]);
+
   useEffect(() => { loadHistory(); }, [loadHistory]);
 
   // Market hours check (US equities: 09:30 - 16:00 America/New_York, Mon-Fri)
@@ -232,7 +268,9 @@ function Dashboard({ isDarkMode = false }) {
       <div className="flex justify-between items-center">
         <div>
           <h1 className={`text-3xl font-bold mb-0.5 ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>Today's Markets</h1>
-          <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>Live data · {TRACKED_SYMBOLS.join(' · ')}</p>
+          <p className={`text-sm ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+            {welcomeMsg || `Live data · ${TRACKED_SYMBOLS.join(' · ')}`}
+          </p>
         </div>
         <button
           onClick={loadStocks}
@@ -246,6 +284,44 @@ function Dashboard({ isDarkMode = false }) {
           Refresh
         </button>
       </div>
+
+      {/* ── Market Mood Banner ── */}
+      {marketMood && (
+        <div className={`border rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4 shadow-sm transition-colors duration-300 ${
+          isDarkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-green-50/40 border-green-150 text-gray-800'
+        }`}>
+          <div className="flex items-center gap-3">
+            <span className="relative flex h-3 w-3">
+              <span className={`animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 ${
+                marketMood.market_sentiment_label === 'Bullish' ? 'bg-emerald-450' : marketMood.market_sentiment_label === 'Bearish' ? 'bg-rose-400' : 'bg-amber-400'
+              }`} />
+              <span className={`relative inline-flex rounded-full h-3 w-3 ${
+                marketMood.market_sentiment_label === 'Bullish' ? 'bg-emerald-500' : marketMood.market_sentiment_label === 'Bearish' ? 'bg-rose-500' : 'bg-amber-500'
+              }`} />
+            </span>
+            <div className="text-sm font-semibold">
+              Market Sentiment Climate: <strong className={
+                marketMood.market_sentiment_label === 'Bullish'
+                  ? 'text-emerald-505'
+                  : marketMood.market_sentiment_label === 'Bearish'
+                    ? 'text-red-500'
+                    : 'text-amber-500'
+              }>{marketMood.market_sentiment_label}</strong>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-6 text-xs font-semibold">
+            <div className={isDarkMode ? 'text-slate-400' : 'text-gray-600'}>
+              Aggregate Volatility Index: <span className={isDarkMode ? 'text-slate-200' : 'text-gray-900'}>{marketMood.market_volatility_index}%</span>
+            </div>
+            <div className={isDarkMode ? 'text-slate-400' : 'text-gray-605'}>
+              Sentiment Score: <span className={isDarkMode ? 'text-slate-200' : 'text-gray-900'}>{marketMood.market_sentiment_score > 0 ? '+' : ''}{marketMood.market_sentiment_score}</span>
+            </div>
+            <div className={isDarkMode ? 'text-slate-500' : 'text-gray-400'}>
+              ({marketMood.analyzed_stocks_count} stocks analysed)
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Error banner ── */}
       {error && (
@@ -386,85 +462,159 @@ function Dashboard({ isDarkMode = false }) {
         </div>
       </div>
 
-      {/* ── Top Movers table ── */}
-      <div className={`border rounded-2xl p-5 shadow-sm ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'}`}>
-        <div className="mb-4 flex justify-between items-baseline">
-          <h3 className={`text-base font-semibold m-0 ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>Top Movers</h3>
-          <span className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>Live prices</span>
-        </div>
-
-        {loading ? (
-          <div className="space-y-3">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className={`h-12 rounded-xl animate-pulse ${isDarkMode ? 'bg-slate-800' : 'bg-gray-100'}`} />
-            ))}
+      {/* ── Grid for Movers & Opportunities ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Left 2 columns: Top Movers */}
+        <div className={`lg:col-span-2 border rounded-2xl p-5 shadow-sm ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'}`}>
+          <div className="mb-4 flex justify-between items-baseline">
+            <h3 className={`text-base font-semibold m-0 ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>Top Movers</h3>
+            <span className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>Live prices</span>
           </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className={`border-b ${isDarkMode ? 'border-slate-850' : 'border-gray-100'}`}>
-                  {['', 'Symbol', 'Name', 'Price', 'Change', '% Change', 'Volume'].map((h) => (
-                    <th
-                      key={h}
-                      className={`text-left px-4 py-3 font-semibold uppercase text-xs tracking-wider first:rounded-tl-lg last:rounded-tr-lg ${isDarkMode
-                        ? 'bg-slate-800/50 text-slate-400'
-                        : 'bg-gray-50 text-gray-500'
+
+          {loading ? (
+            <div className="space-y-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className={`h-12 rounded-xl animate-pulse ${isDarkMode ? 'bg-slate-800' : 'bg-gray-100'}`} />
+              ))}
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr className={`border-b ${isDarkMode ? 'border-slate-850' : 'border-gray-100'}`}>
+                    {['', 'Symbol', 'Name', 'Price', 'Change', '% Change', 'Volume'].map((h) => (
+                      <th
+                        key={h}
+                        className={`text-left px-4 py-3 font-semibold uppercase text-xs tracking-wider first:rounded-tl-lg last:rounded-tr-lg ${isDarkMode
+                          ? 'bg-slate-800/50 text-slate-400'
+                          : 'bg-gray-50 text-gray-500'
+                          }`}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {stocks.map((stock, idx) => (
+                    <tr
+                      key={stock.symbol}
+                      onClick={() => setSelectedSymbol(stock.symbol)}
+                      className={`border-b cursor-pointer transition-colors duration-150 ${isDarkMode
+                        ? `border-slate-800/50 hover:bg-slate-800/60 ${selectedSymbol === stock.symbol ? 'bg-slate-800/80' : ''}`
+                        : `border-gray-50 hover:bg-green-50/50 ${selectedSymbol === stock.symbol ? 'bg-green-50/70' : ''}`
                         }`}
                     >
-                      {h}
-                    </th>
+                      <td className="pl-3 pr-1 py-3.5">
+                        <StarButton
+                          symbol={stock.symbol}
+                          followed={followed}
+                          toggle={toggle}
+                          isGuest={isGuest}
+                          size={15}
+                        />
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className={`font-bold font-mono px-2 py-0.5 rounded-md text-xs ${isDarkMode ? 'bg-green-950/80 text-green-400' : 'bg-green-100 text-green-700'
+                          }`}>{stock.symbol}</span>
+                      </td>
+                      <td className={`px-4 py-3.5 text-xs ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>{stock.name}</td>
+                      <td className={`px-4 py-3.5 font-semibold ${isDarkMode ? 'text-slate-100' : 'text-gray-950'}`}>${stock.price?.toFixed(2)}</td>
+                      <td className={`px-4 py-3.5 flex items-center gap-1.5 font-medium ${stock.change >= 0 ? 'text-emerald-555' : 'text-red-500'}`}>
+                        {stock.change >= 0 ? <TrendingUp size={14} className="text-emerald-500" /> : <TrendingDown size={14} className="text-red-500" />}
+                        <span className={stock.change >= 0 ? 'text-emerald-550' : 'text-red-500'}>
+                          {stock.change >= 0 ? '+' : ''}${stock.change?.toFixed(2)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 font-semibold">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${stock.changePercent >= 0
+                          ? (isDarkMode ? 'bg-emerald-950/60 text-emerald-400' : 'bg-emerald-50 text-emerald-700')
+                          : (isDarkMode ? 'bg-rose-950/60 text-rose-400' : 'bg-red-50 text-red-600')
+                          }`}>
+                          {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent?.toFixed(2)}%
+                        </span>
+                      </td>
+                      <td className={`px-4 py-3.5 text-xs ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
+                        {stock.volume ? `${(stock.volume / 1e6).toFixed(1)}M` : '—'}
+                      </td>
+                    </tr>
                   ))}
-                </tr>
-              </thead>
-              <tbody>
-                {stocks.map((stock, idx) => (
-                  <tr
-                    key={stock.symbol}
-                    onClick={() => setSelectedSymbol(stock.symbol)}
-                    className={`border-b cursor-pointer transition-colors duration-150 ${isDarkMode
-                      ? `border-slate-800/50 hover:bg-slate-800/60 ${selectedSymbol === stock.symbol ? 'bg-slate-800/80' : ''}`
-                      : `border-gray-50 hover:bg-green-50/50 ${selectedSymbol === stock.symbol ? 'bg-green-50/70' : ''}`
-                      }`}
-                  >
-                    <td className="pl-3 pr-1 py-3.5">
-                      <StarButton
-                        symbol={stock.symbol}
-                        followed={followed}
-                        toggle={toggle}
-                        isGuest={isGuest}
-                        size={15}
-                      />
-                    </td>
-                    <td className="px-4 py-3.5">
-                      <span className={`font-bold font-mono px-2 py-0.5 rounded-md text-xs ${isDarkMode ? 'bg-green-950/80 text-green-400' : 'bg-green-100 text-green-700'
-                        }`}>{stock.symbol}</span>
-                    </td>
-                    <td className={`px-4 py-3.5 text-xs ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>{stock.name}</td>
-                    <td className={`px-4 py-3.5 font-semibold ${isDarkMode ? 'text-slate-100' : 'text-gray-950'}`}>${stock.price?.toFixed(2)}</td>
-                    <td className={`px-4 py-3.5 flex items-center gap-1.5 font-medium ${stock.change >= 0 ? 'text-emerald-555' : 'text-red-500'}`}>
-                      {stock.change >= 0 ? <TrendingUp size={14} className="text-emerald-500" /> : <TrendingDown size={14} className="text-red-500" />}
-                      <span className={stock.change >= 0 ? 'text-emerald-550' : 'text-red-500'}>
-                        {stock.change >= 0 ? '+' : ''}${stock.change?.toFixed(2)}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3.5 font-semibold">
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${stock.changePercent >= 0
-                        ? (isDarkMode ? 'bg-emerald-950/60 text-emerald-400' : 'bg-emerald-50 text-emerald-700')
-                        : (isDarkMode ? 'bg-rose-950/60 text-rose-400' : 'bg-red-50 text-red-600')
-                        }`}>
-                        {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent?.toFixed(2)}%
-                      </span>
-                    </td>
-                    <td className={`px-4 py-3.5 text-xs ${isDarkMode ? 'text-slate-400' : 'text-gray-500'}`}>
-                      {stock.volume ? `${(stock.volume / 1e6).toFixed(1)}M` : '—'}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+
+        {/* Right 1 column: Top Opportunities */}
+        <div className={`border rounded-2xl p-5 shadow-sm flex flex-col ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'}`}>
+          <div className="mb-4 flex justify-between items-baseline">
+            <div className="flex items-center gap-1.5">
+              <Award size={16} className="text-green-500" />
+              <h3 className={`text-base font-semibold m-0 ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>Top Setups</h3>
+            </div>
+            <span className={`text-xs ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>AI opportunities</span>
           </div>
-        )}
+
+          {oppLoading ? (
+            <div className="space-y-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className={`h-12 rounded-xl animate-pulse ${isDarkMode ? 'bg-slate-800' : 'bg-gray-100'}`} />
+              ))}
+            </div>
+          ) : opportunities.length === 0 ? (
+            <div className={`flex-1 flex items-center justify-center text-sm p-8 text-center ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
+              No opportunities computed
+            </div>
+          ) : (
+            <div className="space-y-3 flex-1 overflow-y-auto">
+              {opportunities.map((opp, idx) => (
+                <div 
+                  key={opp.ticker || opp.symbol || idx}
+                  onClick={() => setSelectedSymbol(opp.ticker || opp.symbol)}
+                  className={`p-3 rounded-xl border cursor-pointer transition-all flex items-center justify-between ${
+                    selectedSymbol === (opp.ticker || opp.symbol)
+                      ? (isDarkMode ? 'bg-slate-800 border-green-500/50' : 'bg-green-50/50 border-green-300')
+                      : (isDarkMode ? 'bg-slate-900/50 border-slate-800/80 hover:bg-slate-800/30' : 'bg-white border-gray-100 hover:bg-gray-50/30')
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold ${
+                      idx === 0 ? 'bg-amber-100 text-amber-700' : idx === 1 ? 'bg-slate-200 text-slate-700' : 'bg-orange-100 text-orange-700'
+                    }`}>
+                      #{idx + 1}
+                    </div>
+                    <div>
+                      <div className="font-bold font-mono text-sm">{opp.ticker || opp.symbol}</div>
+                      <div className={`text-[10px] ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
+                        Vol: {opp.forecast_volatility != null ? `${(opp.forecast_volatility * 100).toFixed(1)}%` : '—'} · Conf: {opp.confidence_score != null ? `${(opp.confidence_score * 100).toFixed(0)}%` : '—'}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className={`text-xs font-bold ${isDarkMode ? 'text-slate-350' : 'text-gray-700'}`}>
+                      Score: <span className={isDarkMode ? 'text-green-400' : 'text-green-650'}>{opp.opportunity_score != null ? (opp.opportunity_score * 100).toFixed(1) : '—'}</span>
+                    </div>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Change active selected symbol and trigger page change
+                        // Wait, we can redirect or set a hash
+                        window.history.pushState({}, '', '/dashboard/forecasts');
+                        window.dispatchEvent(new PopStateEvent('popstate'));
+                      }}
+                      className={`text-[10px] font-semibold flex items-center gap-0.5 hover:underline mt-1 ml-auto ${
+                        isDarkMode ? 'text-green-400' : 'text-green-600'
+                      }`}
+                    >
+                      Analyse <ExternalLink size={9} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
       {/* ── Latest Headlines ── */}
       <LatestHeadlines isDarkMode={isDarkMode} />

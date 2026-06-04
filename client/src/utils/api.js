@@ -214,7 +214,39 @@ export const forecastApi = {
       method: 'POST',
       body: JSON.stringify(payload),
     }),
+
+  /** Get historical forecast accuracy comparison data */
+  accuracy: (symbol, range = '1mo') =>
+    request(`/api/forecasts/${symbol.toUpperCase()}/accuracy?range=${range}`),
+
+  /** Get ranked stock volatility opportunities list */
+  opportunities: () =>
+    request('/api/forecasts/opportunities'),
+
+  /** Filter forecasts via query filters */
+  screener: (filters = {}) => {
+    const params = new URLSearchParams();
+    if (filters.minVolatility != null) params.append('minVolatility', filters.minVolatility);
+    if (filters.minConfidence != null) params.append('minConfidence', filters.minConfidence);
+    if (filters.sentiment && filters.sentiment !== 'all') params.append('sentiment', filters.sentiment);
+    return request(`/api/forecasts/screener?${params.toString()}`);
+  },
+
+  /** Get news sorted by market impact score for a stock */
+  newsImpact: (symbol) =>
+    request(`/api/forecasts/${symbol.toUpperCase()}/news-impact`),
 };
+
+export const marketApi = {
+  /** Get calculated global market mood indicators */
+  mood: () => request('/api/market/mood'),
+};
+
+export const dashboardApi = {
+  /** Get quick dashboard home shortcuts (opportunities + welcome message) */
+  home: () => request('/api/dashboard/home'),
+};
+
 
 export const newsApi = {
   /** List news articles, optionally filtered by query string */

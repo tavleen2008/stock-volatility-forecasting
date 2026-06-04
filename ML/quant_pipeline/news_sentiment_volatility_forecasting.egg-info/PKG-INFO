@@ -21,14 +21,15 @@ Requires-Dist: scikit-learn>=1.4.2
 Requires-Dist: xgboost>=2.0.3
 Requires-Dist: arch>=7.0.0
 Requires-Dist: mlflow>=2.13.0
-Requires-Dist: great-expectations>=0.18.14
-Requires-Dist: evidently>=0.4.24
 Requires-Dist: joblib>=1.4.2
 Requires-Dist: python-dateutil>=2.9.0
 Requires-Dist: uvicorn>=0.34.0
 Requires-Dist: python-dotenv>=1.0.0
-Requires-Dist: psycopg2-binary>=2.9.9
+Requires-Dist: pandas-market-calendars>=5.4.0
+Requires-Dist: cachetools>=7.1.4
 Provides-Extra: dev
 Requires-Dist: pytest>=8.2.0; extra == "dev"
 Requires-Dist: ruff>=0.4.4; extra == "dev"
 Requires-Dist: mypy>=1.10.0; extra == "dev"
+Requires-Dist: great-expectations>=0.18.14; extra == "dev"
+Requires-Dist: evidently>=0.4.24; extra == "dev"

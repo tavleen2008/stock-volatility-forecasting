@@ -1,3 +1,3 @@
-date,actual_volatility,har_forecast,har_sentiment_forecast,har_log_forecast,xgb_forecast,xgb_sentiment_forecast,har_sentiment_trained,xgb_sentiment_trained
-2026-06-01,0.6763920026903503,0.0,0.48689517836024904,0.0002056962386620008,0.5403562,0.5403562,True,True
-2026-06-02,0.5106452964790912,0.0,0.21901918149830316,1.5874507866387553e-05,0.8401021,0.8401021,True,True
+date,actual_volatility,har_forecast,har_sentiment_forecast,har_sentiment_trained
+2026-06-01,0.6763920026903503,0.0,1.0037058659521172,True
+2026-06-02,0.5106452964790912,0.0,0.5221954662040752,True

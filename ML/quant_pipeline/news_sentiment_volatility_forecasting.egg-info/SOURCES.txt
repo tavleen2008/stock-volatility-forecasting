@@ -3,6 +3,7 @@ pyproject.toml
 ./ml/data/__init__.py
 ./ml/data/data_config.py
 ./ml/data/database.py
+./ml/data/fnspid_data_loader.py
 ./ml/data/market_data_loader.py
 ./ml/data/news_data_loader.py
 ./ml/data/schemas.py
@@ -18,10 +19,12 @@ pyproject.toml
 ./ml/pipelines/__init__.py
 ./ml/pipelines/export.py
 ./ml/pipelines/train_pipeline.py
+./ml/pipelines/train_pipeline_fnspid.py
 ml/__init__.py
 ml/data/__init__.py
 ml/data/data_config.py
 ml/data/database.py
+ml/data/fnspid_data_loader.py
 ml/data/market_data_loader.py
 ml/data/news_data_loader.py
 ml/data/schemas.py
@@ -37,6 +40,7 @@ ml/nlp/finbert_sentiment.py
 ml/pipelines/__init__.py
 ml/pipelines/export.py
 ml/pipelines/train_pipeline.py
+ml/pipelines/train_pipeline_fnspid.py
 news_sentiment_volatility_forecasting.egg-info/PKG-INFO
 news_sentiment_volatility_forecasting.egg-info/SOURCES.txt
 news_sentiment_volatility_forecasting.egg-info/dependency_links.txt

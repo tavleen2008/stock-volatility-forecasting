@@ -29,10 +29,10 @@ dependencies = [
   "uvicorn>=0.34.0",
   "python-dotenv>=1.0.0",
   "pandas-market-calendars>=5.4.0",
-<<<<<<< HEAD
-=======
+  "matplotlib>=3.10.9",
+  "datasets>=4.8.5",
   "cachetools>=7.1.4",
->>>>>>> cceea7bc54b1b2a01a6ec8ebf639b17a041d4e6c
+  "huggingface-hub>=1.16.1",
 ]
 
 [project.optional-dependencies]

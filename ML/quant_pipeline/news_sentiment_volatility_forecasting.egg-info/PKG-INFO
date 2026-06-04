@@ -26,10 +26,10 @@ Requires-Dist: python-dateutil>=2.9.0
 Requires-Dist: uvicorn>=0.34.0
 Requires-Dist: python-dotenv>=1.0.0
 Requires-Dist: pandas-market-calendars>=5.4.0
-<<<<<<< HEAD
-=======
+Requires-Dist: matplotlib>=3.10.9
+Requires-Dist: datasets>=4.8.5
 Requires-Dist: cachetools>=7.1.4
->>>>>>> cceea7bc54b1b2a01a6ec8ebf639b17a041d4e6c
+Requires-Dist: huggingface-hub>=1.16.1
 Provides-Extra: dev
 Requires-Dist: pytest>=8.2.0; extra == "dev"
 Requires-Dist: ruff>=0.4.4; extra == "dev"

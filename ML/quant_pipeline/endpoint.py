@@ -9,14 +9,18 @@ from datetime import datetime, timedelta
 
 import psycopg2
 import psycopg2.extras
-from transformers import pipeline as hf_pipeline
+from huggingface_hub import InferenceClient  # use HF InferenceClient for FinBERT
 from dotenv import load_dotenv
+import os
+
 load_dotenv()
+
+# Global InferenceClient for batch FinBERT calls
+client = InferenceClient(provider="hf-inference", api_key=os.getenv("HF_TOKEN"), model="ProsusAI/finbert")
 
 import joblib
 import numpy as np
 import pandas as pd
-import os
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
@@ -102,23 +106,60 @@ LABEL_MAP = {
 # ---------------------------------------------------------------------------
 
 def load_finbert():
-    """Load FinBERT model in a controlled function scope.
-    Prevents cold-start crashes on memory-constrained deployments (e.g. Render).
+    """Return a callable that queries Hugging Face Inference API for FinBERT.
+    If the API cannot be reached (e.g., DNS failure, no internet), the callable
+    falls back to a deterministic neutral sentiment output so the service keeps
+    running without crashing.
     """
-    return hf_pipeline(
-        "sentiment-analysis",
+    token = os.getenv("HF_TOKEN")
+    client = InferenceClient(
+        provider="hf-inference",
+        api_key=token,
         model="ProsusAI/finbert",
-        tokenizer="ProsusAI/finbert",
     )
+
+    def _infer(text: str):
+        try:
+            # The InferenceClient returns a list of prediction dicts.
+            return client.text_classification(text)
+        except Exception as e:
+            print(f"FinBERT API call failed: {e}. Using fallback neutral sentiment.")
+            return [{"label": "NEUTRAL", "score": 1.0}]
+
+    return _infer
 
 
 # ---------------------------------------------------------------------------
 # Fix #12: Cached per-text sentiment to avoid re-running FinBERT on dupes
 # ---------------------------------------------------------------------------
 
+from typing import List
+
+# ---------------------------------------------------------------------------
+# Batch inference helper – sends many texts to the HF Inference API at once.
+# ---------------------------------------------------------------------------
+
+def batch_finbert(texts: List[str]) -> List[dict]:
+    """Call the HF Inference API with a list of texts.
+    Returns a list of prediction dicts (one per input). If the API fails, returns a
+    list of neutral predictions of the same length.
+    """
+    try:
+        # The InferenceClient can accept a list for batch processing.
+        return client.text_classification(texts)
+    except Exception as e:
+        print(f"FinBERT batch API call failed: {e}. Using fallback neutral sentiment for all inputs.")
+        return [{"label": "NEUTRAL", "score": 1.0} for _ in texts]
+
+# ---------------------------------------------------------------------------
+# Cached per-text inference – retains previous LRU caching behavior for individual calls.
+# ---------------------------------------------------------------------------
 @lru_cache(maxsize=256)
 def _cached_finbert_inference(text: str) -> dict:
-    """Run FinBERT on a single text snippet, with LRU caching."""
+    """Run FinBERT via HF Inference API on a single text snippet, with LRU caching.
+    The InferenceApi object is callable and returns a list of dicts.
+    """
+    # The InferenceApi returns a list of prediction dicts; we take the first.
     return FINBERT(text)[0]
 
 
@@ -173,76 +214,92 @@ def analyze_sentiment(articles):
     Returns a dict containing daily-aggregated sentiment statistics and
     the top 5 most impactful headlines.
 
-    Fixes applied:
-      - Robust label mapping (handles LABEL_0/1/2 formats)
-      - Explicit NEUTRAL → 0.0 scoring
-      - Per-text caching via lru_cache
-      - Daily aggregation preserving time-series structure
-      - UTC-normalized timestamps
+    Improvements:
+      - Batch sends all article texts to the HF Inference API for speed.
+      - Falls back to cached per‑text inference for any missing predictions.
+      - Robust label mapping, neutral scoring, and early‑return handling remain.
     """
 
-    # Fix #13: early return for empty input
     if not articles:
         return default_sentiment()
 
-    scores = []
-    top_news = []
-
+    # Collect texts (truncate to 512 chars as before)
+    texts = []
+    article_map = []  # keep original article reference for later association
     for article in articles:
-        text = (
+        txt = (
             article.get("title")
             or article.get("description")
             or article.get("content")
             or ""
         )
-        if not text:
+        if not txt:
             continue
+        txt = txt[:512]
+        texts.append(txt)
+        article_map.append(txt)
 
+    if not texts:
+        return default_sentiment()
+
+    # Batch inference – returns a list of prediction dicts matching the order of texts.
+    batch_preds = batch_finbert(texts)
+
+    scores = []
+    top_news = []
+    for txt, pred in zip(article_map, batch_preds):
         try:
-            # Fix #12: cached inference
-            pred = _cached_finbert_inference(text[:512])
-
-            # Fix #4: robust label mapping
             label_raw = pred["label"].lower()
             sentiment = LABEL_MAP.get(label_raw, "NEUTRAL")
             confidence = float(pred["score"])
-
-            # Fix #5: explicit neutral scoring
             if sentiment == "POSITIVE":
                 score = confidence
             elif sentiment == "NEGATIVE":
                 score = -confidence
             else:
                 score = 0.0
-
             scores.append(score)
-
             top_news.append(
                 {
-                    "headline": text[:150],
+                    "headline": txt[:150],
                     "sentiment_score": round(score, 4),
                     "sentiment_label": sentiment,
                 }
             )
         except Exception as e:
-            print(f"Sentiment error: {e}")
+            # Fallback to cached per‑text inference for this single item.
+            try:
+                pred = _cached_finbert_inference(txt)
+                label_raw = pred["label"].lower()
+                sentiment = LABEL_MAP.get(label_raw, "NEUTRAL")
+                confidence = float(pred["score"])
+                if sentiment == "POSITIVE":
+                    score = confidence
+                elif sentiment == "NEGATIVE":
+                    score = -confidence
+                else:
+                    score = 0.0
+                scores.append(score)
+                top_news.append(
+                    {
+                        "headline": txt[:150],
+                        "sentiment_score": round(score, 4),
+                        "sentiment_label": sentiment,
+                    }
+                )
+            except Exception as ee:
+                print(f"Sentiment error (fallback): {ee}")
 
-    # Fix #13: fallback if all articles failed inference
     if not scores:
         return default_sentiment()
 
     sentiment_series = pd.Series(scores)
-
     return {
         "average_sentiment": float(sentiment_series.mean()),
         "sentiment_std": float(sentiment_series.std() if len(scores) > 1 else 0.0),
-        "sentiment_shock": float(
-            sentiment_series.iloc[-1] - sentiment_series.mean()
-        ),
+        "sentiment_shock": float(sentiment_series.iloc[-1] - sentiment_series.mean()),
         "article_count": len(scores),
-        "top_news": sorted(
-            top_news, key=lambda n: abs(n["sentiment_score"]), reverse=True
-        )[:5],
+        "top_news": sorted(top_news, key=lambda n: abs(n["sentiment_score"]), reverse=True)[:5],
     }
 
 

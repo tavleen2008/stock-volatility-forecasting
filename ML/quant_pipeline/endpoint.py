@@ -197,11 +197,11 @@ async def forecast(
 
         return ForecastResponse(
             ticker=ticker,
-            generated_at="2026-06-02T08:00:00Z",
+            generated_at=datetime.utcnow().isoformat(),
             data_available_until="2026-06-02T07:59:59Z",
             forecast_for="2026-06-02",
             forecast_type="same_day_pre_market",
-            forecast_volatility=0.1834,
+            forecast_volatility=round(prediction, 4),
             prediction_interval=PredictionInterval(
                 lower=round(max(0.0, prediction * 0.90), 4),
                 upper=round(prediction * 1.10, 4),

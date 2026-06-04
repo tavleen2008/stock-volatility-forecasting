@@ -26,8 +26,8 @@ class HARModel:
         self.estimator_name = estimator
         self.ridge_alpha = ridge_alpha
         self.clip_predictions = clip_predictions
-        # allow custom feature columns; default to classic HAR lags
-        self.feature_columns = feature_columns if feature_columns is not None else ["rv_daily", "rv_weekly", "rv_monthly"]
+        # Copy to avoid mutating the caller's list when sentiment cols are appended below
+        self.feature_columns = list(feature_columns) if feature_columns is not None else ["rv_daily", "rv_weekly", "rv_monthly"]
         self.sentiment_columns = [
             "mean_sentiment",
             "std_sentiment",

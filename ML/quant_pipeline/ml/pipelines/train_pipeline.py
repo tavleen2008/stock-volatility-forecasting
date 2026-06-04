@@ -7,6 +7,8 @@ Run:
 from pathlib import Path
 import logging
 
+import matplotlib
+matplotlib.use("Agg")  # non-interactive backend — prevents tkinter crash in subprocesses
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -71,6 +73,12 @@ def main() -> None:
     """Run the checkpoint 1 forecasting demo."""
 
     config = DataConfig()
+    # Force synthetic sentiment so HAR+Sentiment model always gets trained
+    # and saved even when no real news API data is present.
+    if not config.synthetic_sentiment:
+        import os
+        os.environ["SYNTHETIC_SENTIMENT"] = "true"
+        config = DataConfig()
     _set_seed(config.random_seed)
 
     feature_builder = FeatureBuilder()
@@ -117,6 +125,13 @@ def main() -> None:
             logger.warning("Skipping ticker with no usable features", extra={"ticker": ticker})
             continue
 
+        # Defensively drop any duplicate columns that may arise from edge cases
+        # in the merge/fill logic (e.g. pandas 2.x CoW interactions).
+        if features.columns.duplicated().any():
+            dup_cols = features.columns[features.columns.duplicated(keep=False)].tolist()
+            logger.warning("Duplicate feature columns detected and removed", extra={"ticker": ticker, "cols": dup_cols})
+            features = features.loc[:, ~features.columns.duplicated()]
+
         train, val, test = feature_builder.train_validation_test_split(features)
         target_col = "future_realized_volatility"
 
@@ -145,44 +160,48 @@ def main() -> None:
         ]
 
         base_model = HARModel(use_sentiment=False, estimator="linear", feature_columns=base_features)
-        sentiment_model = HARModel(use_sentiment=True, estimator="ridge", ridge_alpha=1.0, feature_columns=base_features + sentiment_features)
+        # NOTE: HARModel(use_sentiment=True) appends sentiment_columns internally,
+        # so we pass only base_features here — NOT base_features + sentiment_features.
+        # Passing the combined list would cause each sentiment column to appear twice.
+        sentiment_model = HARModel(use_sentiment=True, estimator="ridge", ridge_alpha=1.0, feature_columns=base_features)
 
-        x_train_base = train[base_features]
-        x_test_base = test[base_features]
-        x_train_sent = train[base_features + sentiment_features]
-        x_test_sent = test[base_features + sentiment_features]
+        all_sent_cols = base_features + sentiment_features
+
+        # Build base and full-feature DataFrames from scratch to guarantee
+        # no duplicate columns (avoids pandas 2.x slice/CoW edge cases).
+        x_train_base = pd.DataFrame({c: train[c].values for c in base_features}, index=train.index)
+        x_test_base  = pd.DataFrame({c: test[c].values  for c in base_features}, index=test.index)
+        x_train_sent = pd.DataFrame({c: train[c].values for c in all_sent_cols}, index=train.index)
+        x_test_sent  = pd.DataFrame({c: test[c].values  for c in all_sent_cols}, index=test.index)
 
         # Scale numeric features (fit on train only)
         base_scaler = StandardScaler()
         x_train_base_scaled = pd.DataFrame(base_scaler.fit_transform(x_train_base), columns=base_features, index=x_train_base.index)
-        x_test_base_scaled = pd.DataFrame(base_scaler.transform(x_test_base), columns=base_features, index=x_test_base.index)
+        x_test_base_scaled  = pd.DataFrame(base_scaler.transform(x_test_base),  columns=base_features, index=x_test_base.index)
 
         sent_scaler = StandardScaler()
-        # If sentiment is missing/constant and synthetic_sentiment is enabled, inject small noise for testing
-        sent_cols = [c for c in x_train_sent.columns if c.startswith("mean_sentiment") or c in [
-            "std_sentiment",
-            "positive_count",
-            "negative_count",
-            "neutral_count",
-            "rolling_sentiment_mean",
-            "rolling_sentiment_std",
-            "sentiment_shock",
-        ]]
-        # quick check for constant columns
+        # Deduplicated list of sentiment column names for variance check
+        sent_cols = list(dict.fromkeys(sentiment_features))  # preserve order, no duplicates
+
+        # quick check for constant sentiment columns
         try:
             sent_var = x_train_sent[sent_cols].var(numeric_only=True)
         except Exception:
             sent_var = pd.Series([0.0] * len(sent_cols), index=sent_cols)
 
         if (sent_var.fillna(0.0) <= 1e-12).all() and config.synthetic_sentiment:
-            # inject tiny random noise centered at 0 for testing
+            # All sentiment columns are zero (no real news data).
+            # Inject tiny Gaussian noise so the scaler and Ridge model
+            # can still be fitted. See docstring in train_pipeline for caveats.
             rng = np.random.RandomState(config.random_seed)
             for col in sent_cols:
+                # Simple column-level assignment on a freshly-built DataFrame
+                # is safe and avoids CoW / duplicate-column issues.
                 x_train_sent[col] = rng.normal(loc=0.0, scale=0.01, size=len(x_train_sent))
-                x_test_sent[col] = rng.normal(loc=0.0, scale=0.01, size=len(x_test_sent))
+                x_test_sent[col]  = rng.normal(loc=0.0, scale=0.01, size=len(x_test_sent))
 
         x_train_sent_scaled = pd.DataFrame(sent_scaler.fit_transform(x_train_sent), columns=x_train_sent.columns, index=x_train_sent.index)
-        x_test_sent_scaled = pd.DataFrame(sent_scaler.transform(x_test_sent), columns=x_test_sent.columns, index=x_test_sent.index)
+        x_test_sent_scaled  = pd.DataFrame(sent_scaler.transform(x_test_sent),  columns=x_test_sent.columns, index=x_test_sent.index)
 
         y_train = train[target_col]
         y_test = test[target_col]
@@ -217,6 +236,32 @@ def main() -> None:
             logger.exception("Sentiment model training failed; falling back to base model predictions", extra={"ticker": ticker})
             sentiment_pred = base_model.predict(x_test_base_scaled).reindex(y_test.index)
             har_sent_trained = False
+
+        # -----------------------------------------------------------------
+        # Persist artifacts for the API endpoint.
+        # We always save the base model (har_model / har_scaler) and,
+        # when the sentiment model trained successfully, the HAR+sentiment
+        # variant (har_sentiment_model / har_sentiment_scaler).
+        # We use AAPL as the canonical ticker for the saved artifacts;
+        # other tickers' models are not persisted here to avoid overwriting.
+        # -----------------------------------------------------------------
+        models_dir = _Path("artifacts") / "models"
+        models_dir.mkdir(parents=True, exist_ok=True)
+        if ticker == config.tickers[0]:  # canonical ticker only
+            base_model.save(models_dir / "har_model.joblib")
+            joblib.dump(base_scaler, models_dir / "har_scaler.joblib")
+            logger.info("Saved base HAR model and scaler", extra={"ticker": ticker})
+            if har_sent_trained:
+                sentiment_model.save(models_dir / "har_sentiment_model.joblib")
+                joblib.dump(sent_scaler, models_dir / "har_sentiment_scaler.joblib")
+                logger.info("Saved HAR+Sentiment model and scaler", extra={"ticker": ticker})
+            else:
+                logger.warning(
+                    "HAR+Sentiment model was NOT trained for canonical ticker; "
+                    "har_sentiment_model.joblib will NOT be saved. "
+                    "Set SYNTHETIC_SENTIMENT=true in .env to force training.",
+                    extra={"ticker": ticker},
+                )
 
         base_pred = base_model.predict(x_test_base_scaled).reindex(y_test.index)
 

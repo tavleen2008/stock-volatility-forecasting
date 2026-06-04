@@ -86,6 +86,16 @@ class NewsDataLoader:
             logger.warning("No NewsAPI key configured; returning empty news frame", extra={"ticker": ticker})
             return pd.DataFrame(columns=["headline", "snippet", "ticker", "source", "timestamp", "url"])
 
+        # Free tier NewsAPI only allows past 1 month. Adjust start_date to max 28 days ago.
+        from datetime import datetime, timedelta
+        min_start = (datetime.now() - timedelta(days=28)).strftime("%Y-%m-%d")
+        if start_date < min_start:
+            logger.info("Adjusting news start_date to fit NewsAPI free tier", extra={"old": start_date, "new": min_start})
+            start_date = min_start
+            if end_date < start_date:
+                # If end_date is before the new start_date, set end_date to today
+                end_date = datetime.now().strftime("%Y-%m-%d")
+
         params = {
             "q": ticker,
             "from": start_date,

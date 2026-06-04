@@ -29,8 +29,8 @@ class DataConfig(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
     tickers: list[str] = Field(default_factory=lambda: DEMO_TICKERS.copy())
-    start_date: date = Field(default=date(2018, 1, 1))
-    end_date: date = Field(default=date(2025, 1, 1))
+    start_date: date = Field(default=date(2022, 1, 1))
+    end_date: date = Field(default=date.today())
     news_api_key: str = Field(default="")
     database_url: str = Field(default="postgresql+psycopg://postgres:postgres@localhost:5432/volatility")
     mlflow_tracking_uri: str = Field(default="http://127.0.0.1:5000")

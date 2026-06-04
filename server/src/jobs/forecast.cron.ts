@@ -1,7 +1,7 @@
 import cron from 'node-cron';
 import { prisma } from '../config/prisma';
 import { TRACKED_SYMBOLS } from '../modules/stocks/stock.constants';
-import { mockMlClient } from '../modules/forecasts/mock.ml.client';
+import { mlClient } from '../modules/forecasts/ml.client';
 import { safeDel, safeSetex } from '../config/redis';
 
 export const startForecastJob = () => {
@@ -12,7 +12,7 @@ export const startForecastJob = () => {
         try {
             for (const { symbol } of TRACKED_SYMBOLS) {
                 try {
-                    const forecastData = await mockMlClient.getLatestForecast(symbol);
+                    const forecastData = await mlClient.getLatestForecast(symbol);
                     
                     await prisma.forecast.create({
                         data: {

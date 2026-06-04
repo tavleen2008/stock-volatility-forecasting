@@ -1,4 +1,4 @@
-import { mockMlClient } from './mock.ml.client';
+import { mlClient } from './ml.client';
 import { prisma } from '../../config/prisma';
 import { fetchStockHistory } from '../stocks/stock.service';
 import { TimeRange, getRangeParams } from '../../shared/constants/time.constants';
@@ -20,7 +20,7 @@ export const ForecastService = {
         if (dbForecast) {
             result = dbForecast.fullPayload as unknown as ForecastPayload;
         } else {
-            result = await mockMlClient.getLatestForecast(symbol);
+            result = await mlClient.getLatestForecast(symbol);
         }
 
         await safeSetex(cacheKey, 3600, JSON.stringify(result));
@@ -64,8 +64,8 @@ export const ForecastService = {
             });
         }
 
-        // Fallback to generating mock history if DB is empty
-        return await mockMlClient.getHistory(symbol, range);
+        // If DB is empty, return empty history
+        return [];
     },
 
     getForecastSummary: async (symbol: string) => {

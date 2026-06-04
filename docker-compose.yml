@@ -22,6 +22,7 @@ services:
     environment:
       - REDIS_URL=redis://redis:6379
       - RUNNING_IN_DOCKER=true
+      - ML_SERVICE_URL=http://ml:8080
     extra_hosts:
       - "host.docker.internal:host-gateway"
     depends_on:
@@ -37,3 +38,16 @@ services:
       - "5173:80"
     depends_on:
       - backend
+
+  ml:
+    build:
+      context: ./ML/quant_pipeline
+      dockerfile: Dockerfile
+    container_name: volatility_ml
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    env_file:
+      - ./ML/quant_pipeline/.env
+    depends_on:
+      - redis

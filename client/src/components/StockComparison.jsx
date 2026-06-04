@@ -8,6 +8,8 @@ import {
 } from 'lucide-react';
 import { stocksApi } from '../utils/api';
 import { TRACKED_SYMBOLS } from '../utils/constants';
+import StarButton from './StarButton';
+import { useWatchlist } from '../hooks/useWatchlist';
 
 /* ─── Colour palette for up to 6 lines ─────────────────────────── */
 const PALETTE = ['#22c55e', '#3b82f6', '#f59e0b', '#ec4899', '#a855f7', '#06b6d4'];
@@ -119,6 +121,7 @@ function StockComparison({ isDarkMode = false }) {
   const [customInput, setCustomInput] = useState('');
   const [customSymbols, setCustomSymbols] = useState([]); // extra user-added symbols
   const inputRef = useRef(null);
+  const { followed, toggle: toggleFollow, isGuest } = useWatchlist();
 
   const allSymbols = [...new Set([...TRACKED_SYMBOLS, ...customSymbols])];
 
@@ -257,6 +260,13 @@ function StockComparison({ isDarkMode = false }) {
       <div className="flex flex-wrap items-center gap-2 mb-5">
         {allSymbols.map((sym, i) => (
           <div key={sym} className="flex items-center gap-1">
+            <StarButton
+              symbol={sym}
+              followed={followed}
+              toggle={toggleFollow}
+              isGuest={isGuest}
+              size={13}
+            />
             <SymbolChip
               symbol={sym}
               color={PALETTE[allSymbols.indexOf(sym) % PALETTE.length]}

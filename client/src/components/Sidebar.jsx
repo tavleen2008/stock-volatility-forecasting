@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronDown, Home, TrendingUp, Eye, BarChart3, BookOpen, Briefcase, Zap, Activity, Building2, Gauge, Layers, Globe } from 'lucide-react';
+import { ChevronDown, Home, TrendingUp, Eye, BarChart3, BookOpen, Briefcase, Zap, Activity, Building2, Gauge, Layers, Globe, Settings } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 function Sidebar({ isOpen, isDarkMode }) {
@@ -52,6 +52,12 @@ function Sidebar({ isOpen, isDarkMode }) {
       title: 'Market Overview',
       items: [
         { label: 'Market Overview', href: '/dashboard/market', icon: <Globe size={18} /> },
+      ],
+    },
+    {
+      title: 'Account',
+      items: [
+        { label: 'Settings', href: '/dashboard/settings', icon: <Settings size={18} /> },
       ],
     },
   ];

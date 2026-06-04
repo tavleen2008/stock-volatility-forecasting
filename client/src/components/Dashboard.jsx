@@ -6,6 +6,8 @@ import {
 import { TrendingUp, TrendingDown, DollarSign, Activity, RefreshCw, ExternalLink, Newspaper } from 'lucide-react';
 import { stocksApi, newsApi } from '../utils/api';
 import StockComparison from './StockComparison';
+import StarButton from './StarButton';
+import { useWatchlist } from '../hooks/useWatchlist';
 
 import { TRACKED_SYMBOLS } from '../utils/constants';
 import { getSentiment, timeAgo } from '../utils/helpers';
@@ -135,6 +137,7 @@ function Dashboard({ isDarkMode = false }) {
   const [loading, setLoading] = useState(true);
   const [histLoading, setHistLoading] = useState(false);
   const [error, setError] = useState(null);
+  const { followed, toggle, isGuest } = useWatchlist();
   const [marketOpen, setMarketOpen] = useState(false);
   const [etTime, setEtTime] = useState('');
   const [nextEvent, setNextEvent] = useState('');
@@ -401,7 +404,7 @@ function Dashboard({ isDarkMode = false }) {
             <table className="w-full border-collapse text-sm">
               <thead>
                 <tr className={`border-b ${isDarkMode ? 'border-slate-850' : 'border-gray-100'}`}>
-                  {['Symbol', 'Name', 'Price', 'Change', '% Change', 'Volume'].map((h) => (
+                  {['', 'Symbol', 'Name', 'Price', 'Change', '% Change', 'Volume'].map((h) => (
                     <th
                       key={h}
                       className={`text-left px-4 py-3 font-semibold uppercase text-xs tracking-wider first:rounded-tl-lg last:rounded-tr-lg ${isDarkMode
@@ -424,6 +427,15 @@ function Dashboard({ isDarkMode = false }) {
                       : `border-gray-50 hover:bg-green-50/50 ${selectedSymbol === stock.symbol ? 'bg-green-50/70' : ''}`
                       }`}
                   >
+                    <td className="pl-3 pr-1 py-3.5">
+                      <StarButton
+                        symbol={stock.symbol}
+                        followed={followed}
+                        toggle={toggle}
+                        isGuest={isGuest}
+                        size={15}
+                      />
+                    </td>
                     <td className="px-4 py-3.5">
                       <span className={`font-bold font-mono px-2 py-0.5 rounded-md text-xs ${isDarkMode ? 'bg-green-950/80 text-green-400' : 'bg-green-100 text-green-700'
                         }`}>{stock.symbol}</span>

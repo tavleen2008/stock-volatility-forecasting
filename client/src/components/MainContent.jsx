@@ -7,6 +7,7 @@ import NewsFeed from './NewsFeed';
 import StockComparison from './StockComparison';
 import SecurityAnalysis from './SecurityAnalysis';
 import MarketOverview from './MarketOverview';
+import Settings from './Settings';
 
 const ROUTES = {
   '/portfolio': 'portfolio',
@@ -17,6 +18,7 @@ const ROUTES = {
   '/snapshot':  'security',
   '/security':  'security',
   '/market':    'market',
+  '/settings':  'settings',
 };
 
 function getPage(path) {
@@ -42,6 +44,7 @@ function MainContent({ isDarkMode }) {
       {currentPage === 'news'       && <NewsFeed   isDarkMode={isDarkMode} />}
       {currentPage === 'security'   && <SecurityAnalysis isDarkMode={isDarkMode} />}
       {currentPage === 'market'     && <MarketOverview isDarkMode={isDarkMode} />}
+      {currentPage === 'settings'   && <Settings   isDarkMode={isDarkMode} />}
       {currentPage === 'compare'    && (
         <div className="flex flex-col gap-6 animate-fade-in">
           <div>

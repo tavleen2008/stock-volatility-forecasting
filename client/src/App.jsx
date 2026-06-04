@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Landing from './pages/Landing';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -27,13 +27,13 @@ function App() {
           }
         />
 
-        {/* Legacy: redirect /portfolio, /forecasts etc to dashboard sub-routes */}
-        <Route path="/portfolio" element={
-          <ProtectedRoute><DashboardPage /></ProtectedRoute>
-        } />
-        <Route path="/forecasts" element={
-          <ProtectedRoute><DashboardPage /></ProtectedRoute>
-        } />
+        {/* Legacy dashboard paths */}
+        <Route path="/portfolio" element={<Navigate to="/dashboard/portfolio" replace />} />
+        <Route path="/forecasts" element={<Navigate to="/dashboard/forecasts" replace />} />
+        <Route path="/volatility" element={<Navigate to="/dashboard/forecasts" replace />} />
+        <Route path="/news" element={<Navigate to="/dashboard/news" replace />} />
+        <Route path="/compare" element={<Navigate to="/dashboard/compare" replace />} />
+        <Route path="/snapshot/*" element={<Navigate to="/dashboard/snapshot" replace />} />
 
         {/* Catch-all → landing */}
         <Route path="*" element={<Landing />} />

@@ -40,6 +40,7 @@ function Portfolio({ isDarkMode = false }) {
   const [holdings, setHoldings]           = useState(INITIAL_HOLDINGS);
   const [performanceData, setPerformanceData] = useState([]);
   const [loading, setLoading]             = useState(true);
+  const [chartLoading, setChartLoading]   = useState(false);
   const [error, setError]                 = useState(null);
 
   const loadQuotes = useCallback(async () => {
@@ -72,13 +73,77 @@ function Portfolio({ isDarkMode = false }) {
   const bestHolder = [...enriched].sort((a, b) => b.gainPercent - a.gainPercent)[0];
 
   useEffect(() => {
-    if (totalValue === 0) return;
-    const data = Array.from({ length: 30 }, (_, i) => ({
-      day: `D${i + 1}`,
-      value: totalValue * (1 + (Math.sin(i / 4) * 0.03) + (i / 30) * 0.05 + (Math.random() - 0.5) * 0.02),
-    }));
-    setPerformanceData(data);
-  }, [totalValue]);
+    if (holdings.length === 0) {
+      setPerformanceData([]);
+      return;
+    }
+
+    let active = true;
+    async function fetchPerformance() {
+      setChartLoading(true);
+      try {
+        const uniqueSymbols = [...new Set(holdings.map(h => h.symbol))];
+        const historyPromises = uniqueSymbols.map(sym => stocksApi.history(sym, '1mo'));
+        const results = await Promise.allSettled(historyPromises);
+
+        if (!active) return;
+
+        // Map symbol -> array of history items
+        const historyMap = {};
+        uniqueSymbols.forEach((sym, idx) => {
+          const res = results[idx];
+          if (res.status === 'fulfilled' && res.value && res.value.history) {
+            historyMap[sym] = res.value.history;
+          } else {
+            historyMap[sym] = [];
+          }
+        });
+
+        // Collect all unique dates across all successful history results
+        const allDatesSet = new Set();
+        Object.values(historyMap).forEach(hist => {
+          hist.forEach(h => {
+            if (h.date) allDatesSet.add(h.date);
+          });
+        });
+
+        const sortedDates = [...allDatesSet].sort((a, b) => new Date(a) - new Date(b));
+
+        // For each date, sum the portfolio value
+        const dailyPerformance = sortedDates.map(date => {
+          let dailyVal = 0;
+          holdings.forEach(h => {
+            const quoteOnDate = historyMap[h.symbol]?.find(item => item.date === date);
+            const price = quoteOnDate?.close ?? h.buyPrice;
+            dailyVal += price * h.shares;
+          });
+
+          let formattedLabel = date;
+          try {
+            const parsed = new Date(date);
+            formattedLabel = parsed.toLocaleDateString(undefined, { month: 'short', day: 'numeric', timeZone: 'UTC' });
+          } catch {
+            // ignore
+          }
+
+          return {
+            date: formattedLabel,
+            value: dailyVal,
+            rawDate: date
+          };
+        });
+
+        setPerformanceData(dailyPerformance);
+      } catch (err) {
+        console.error('Error calculating historical portfolio values:', err);
+      } finally {
+        if (active) setChartLoading(false);
+      }
+    }
+
+    fetchPerformance();
+    return () => { active = false; };
+  }, [holdings]);
 
   const removeHolding = (id) => setHoldings((prev) => prev.filter((h) => h.id !== id));
 
@@ -159,23 +224,29 @@ function Portfolio({ isDarkMode = false }) {
         <div className={`lg:col-span-2 border rounded-2xl p-5 shadow-sm ${
           isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'
         }`}>
-          <h3 className={`text-base font-semibold mb-5 m-0 ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>30-Day Performance (est.)</h3>
-          <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={performanceData}>
-              <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#334155' : '#f1f5f9'} />
-              <XAxis dataKey="day" stroke="#94a3b8" tick={{ fontSize: 10 }} tickCount={8} />
-              <YAxis stroke="#94a3b8" tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-              <Tooltip
-                contentStyle={isDarkMode
-                  ? { backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '10px', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }
-                  : { backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }
-                }
-                labelStyle={{ color: isDarkMode ? '#f1f5f9' : '#0f172a', fontWeight: 600 }}
-                formatter={(v) => [`$${Number(v).toFixed(2)}`, 'Value']}
-              />
-              <Line type="monotone" dataKey="value" stroke="#006d35" strokeWidth={2.5} dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
+          <h3 className={`text-base font-semibold mb-5 m-0 ${isDarkMode ? 'text-slate-100' : 'text-gray-900'}`}>30-Day Historical Performance</h3>
+          {chartLoading ? (
+            <div className={`flex items-center justify-center h-[280px] text-sm ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>
+              Calculating historical performance data…
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={performanceData}>
+                <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#334155' : '#f1f5f9'} />
+                <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 10 }} tickCount={8} />
+                <YAxis stroke="#94a3b8" tick={{ fontSize: 11 }} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
+                <Tooltip
+                  contentStyle={isDarkMode
+                    ? { backgroundColor: '#1e293b', border: '1px solid #334155', borderRadius: '10px', boxShadow: '0 4px 20px rgba(0,0,0,0.2)' }
+                    : { backgroundColor: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }
+                  }
+                  labelStyle={{ color: isDarkMode ? '#f1f5f9' : '#0f172a', fontWeight: 600 }}
+                  formatter={(v) => [`$${Number(v).toFixed(2)}`, 'Value']}
+                />
+                <Line type="monotone" dataKey="value" stroke="#006d35" strokeWidth={2.5} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
         </div>
 
         <div className={`border rounded-2xl p-5 shadow-sm ${

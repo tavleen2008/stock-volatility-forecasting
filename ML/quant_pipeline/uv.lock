@@ -2253,6 +2253,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "arch" },
+    { name = "cachetools" },
     { name = "fastapi" },
     { name = "joblib" },
     { name = "mlflow" },
@@ -2288,6 +2289,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "arch", specifier = ">=7.0.0" },
+    { name = "cachetools", specifier = ">=7.1.4" },
     { name = "evidently", marker = "extra == 'dev'", specifier = ">=0.4.24" },
     { name = "fastapi", specifier = ">=0.105.0" },
     { name = "great-expectations", marker = "extra == 'dev'", specifier = ">=0.18.14" },

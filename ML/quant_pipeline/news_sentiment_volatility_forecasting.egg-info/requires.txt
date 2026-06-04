@@ -19,6 +19,10 @@ python-dateutil>=2.9.0
 uvicorn>=0.34.0
 python-dotenv>=1.0.0
 pandas-market-calendars>=5.4.0
+<<<<<<< HEAD
+=======
+cachetools>=7.1.4
+>>>>>>> cceea7bc54b1b2a01a6ec8ebf639b17a041d4e6c
 
 [dev]
 pytest>=8.2.0

@@ -58,7 +58,7 @@ export const ForecastService = {
                     predicted_volatility: item.forecastVolatility,
                     // Note: actual_volatility would ideally come from the stock history DB, 
                     // but we'll include it from the payload if it exists
-                    actual_volatility: payload.forecast_volatility,
+                    actual_volatility: payload.actual_volatility || item.forecastVolatility,
                     average_sentiment: item.sentimentScore
                 };
             });

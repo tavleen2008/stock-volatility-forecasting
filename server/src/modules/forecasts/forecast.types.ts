@@ -17,6 +17,11 @@ export interface ModelMetrics {
     directional_accuracy: number;
 }
 
+export interface PredictionInterval {
+    lower: number;
+    upper: number;
+}
+
 export interface ForecastPayload {
     ticker: string;
     generated_at: string;
@@ -24,6 +29,8 @@ export interface ForecastPayload {
     forecast_for: string;
     forecast_type: string;
     forecast_volatility: number;
+    actual_volatility?: number;
+    prediction_interval: PredictionInterval;
     recommended_model: string;
     confidence_score: number;
     model_metrics: ModelMetrics;

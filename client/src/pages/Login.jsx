@@ -82,6 +82,11 @@ const s = {
     color: '#93000a', borderRadius: 8, padding: '10px 14px',
     fontSize: 13, marginBottom: 20,
   },
+  success: {
+    background: '#e8f5e9', border: '1px solid #c8e6c9',
+    color: '#2e7d32', borderRadius: 8, padding: '10px 14px',
+    fontSize: 13, marginBottom: 20,
+  },
   footer: {
     background: '#f3f3f4', borderTop: '1px solid #e2e2e2',
     padding: '20px 24px',
@@ -102,9 +107,17 @@ function Login() {
   const [loading, setLoading]   = useState(false);
   const [googleLoad, setGoogleLoad] = useState(false);
 
+  // Password reset states
+  const [mode, setMode] = useState('login'); // 'login' | 'forgot' | 'reset'
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [showNewPass, setShowNewPass] = useState(false);
+  const [successMsg, setSuccessMsg] = useState('');
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setSuccessMsg('');
     if (!email)                          return setError('Please enter your email.');
     if (!/\S+@\S+\.\S+/.test(email))     return setError('Enter a valid email address.');
     if (!password)                       return setError('Please enter your password.');
@@ -115,6 +128,48 @@ function Login() {
     setLoading(false);
     if (res.success) navigate('/dashboard');
     else setError(res.error || 'Invalid credentials. Try guest login.');
+  };
+
+  const handleForgotPasswordSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+    if (!email) return setError('Please enter your email.');
+    if (!/\S+@\S+\.\S+/.test(email)) return setError('Enter a valid email address.');
+
+    setLoading(true);
+    const res = await authService.forgotPassword(email);
+    setLoading(false);
+    if (res.success) {
+      setSuccessMsg('Reset code sent to your email.');
+      setMode('reset');
+    } else {
+      setError(res.error || 'Failed to send reset code.');
+    }
+  };
+
+  const handleResetPasswordSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMsg('');
+    if (!email) return setError('Email is required.');
+    if (!otp) return setError('Please enter the 6-digit verification code.');
+    if (otp.length !== 6) return setError('Verification code must be 6 digits.');
+    if (!newPassword) return setError('Please enter your new password.');
+    if (newPassword.length < 6) return setError('Password must be at least 6 characters.');
+
+    setLoading(true);
+    const res = await authService.resetPassword(email, otp, newPassword);
+    setLoading(false);
+    if (res.success) {
+      setSuccessMsg('Password reset successfully. You can now log in.');
+      setMode('login');
+      setPassword('');
+      setOtp('');
+      setNewPassword('');
+    } else {
+      setError(res.error || 'Failed to reset password.');
+    }
   };
 
   const handleGoogle = () => {
@@ -155,118 +210,248 @@ function Login() {
       </header>
 
       <main style={s.main}>
-        <div style={s.card}>
-          <h1 style={s.heading}>Sign In</h1>
-          <p style={s.subheading}>Enter your credentials to access the terminal.</p>
+        {mode === 'login' && (
+          <div style={s.card}>
+            <h1 style={s.heading}>Sign In</h1>
+            <p style={s.subheading}>Enter your credentials to access the terminal.</p>
 
-          {/* Error */}
-          {error && <div style={s.error}>⚠ {error}</div>}
+            {/* Success */}
+            {successMsg && <div style={s.success}>✓ {successMsg}</div>}
 
-          {/* Google */}
-          <button
-            onClick={handleGoogle}
-            disabled={googleLoad}
-            style={{ ...s.googleBtn, opacity: googleLoad ? 0.6 : 1 }}
-            onMouseEnter={e => { e.currentTarget.style.background = '#f3f3f4'; e.currentTarget.style.borderColor = '#006d35'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#bacbb9'; }}
-          >
-            <GoogleIcon />
-            {googleLoad ? 'Redirecting…' : 'Sign in with Google'}
-          </button>
+            {/* Error */}
+            {error && <div style={s.error}>⚠ {error}</div>}
 
-          {/* Divider */}
-          <div style={s.divider}>
-            <div style={s.divLine} />
-            <span style={s.divLabel}>or email</span>
-            <div style={s.divLine} />
-          </div>
+            {/* Google */}
+            <button
+              onClick={handleGoogle}
+              disabled={googleLoad}
+              style={{ ...s.googleBtn, opacity: googleLoad ? 0.6 : 1 }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#f3f3f4'; e.currentTarget.style.borderColor = '#006d35'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#fff'; e.currentTarget.style.borderColor = '#bacbb9'; }}
+            >
+              <GoogleIcon />
+              {googleLoad ? 'Redirecting…' : 'Sign in with Google'}
+            </button>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <div>
-              <label style={s.label} htmlFor="email">Email Address</label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@company.com"
-                style={s.input}
-                onFocus={inputFocus}
-                onBlur={inputBlur}
-              />
+            {/* Divider */}
+            <div style={s.divider}>
+              <div style={s.divLine} />
+              <span style={s.divLabel}>or email</span>
+              <div style={s.divLine} />
             </div>
 
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-                <label style={{ ...s.label, marginBottom: 0 }} htmlFor="password">Password</label>
-                <a href="#" style={{ fontSize: 11, fontWeight: 700, color: '#006d35', textDecoration: 'none', letterSpacing: '0.05em' }}>Forgot password?</a>
-              </div>
-              <div style={{ position: 'relative' }}>
+            {/* Form */}
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div>
+                <label style={s.label} htmlFor="email">Email Address</label>
                 <input
-                  id="password"
-                  type={showPass ? 'text' : 'password'}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  style={{ ...s.input, paddingRight: 44 }}
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@company.com"
+                  style={s.input}
                   onFocus={inputFocus}
                   onBlur={inputBlur}
                 />
-                <button
-                  type="button"
-                  onClick={() => setShowPass(!showPass)}
-                  style={{
-                    position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
-                    background: 'none', border: 'none', cursor: 'pointer', color: '#6b7b6c',
-                  }}
-                >
-                  <EyeIcon open={showPass} />
-                </button>
               </div>
-            </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <input id="remember" type="checkbox" style={{ width: 16, height: 16, accentColor: '#006d35' }} />
-              <label htmlFor="remember" style={{ fontSize: 13, color: '#3b4a3d' }}>Keep me signed in for 30 days</label>
-            </div>
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <label style={{ ...s.label, marginBottom: 0 }} htmlFor="password">Password</label>
+                  <a href="#" onClick={(e) => { e.preventDefault(); setError(''); setSuccessMsg(''); setMode('forgot'); }} style={{ fontSize: 11, fontWeight: 700, color: '#006d35', textDecoration: 'none', letterSpacing: '0.05em' }}>Forgot password?</a>
+                </div>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    id="password"
+                    type={showPass ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    style={{ ...s.input, paddingRight: 44 }}
+                    onFocus={inputFocus}
+                    onBlur={inputBlur}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPass(!showPass)}
+                    style={{
+                      position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                      background: 'none', border: 'none', cursor: 'pointer', color: '#6b7b6c',
+                    }}
+                  >
+                    <EyeIcon open={showPass} />
+                  </button>
+                </div>
+              </div>
 
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <input id="remember" type="checkbox" style={{ width: 16, height: 16, accentColor: '#006d35' }} />
+                <label htmlFor="remember" style={{ fontSize: 13, color: '#3b4a3d' }}>Keep me signed in for 30 days</label>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  ...s.primaryBtn,
+                  opacity: loading ? 0.7 : 1,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                }}
+                onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#006d35'; if (!loading) e.currentTarget.style.color = '#fff'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#00e676'; e.currentTarget.style.color = '#00210b'; }}
+              >
+                {loading ? 'Signing in…' : 'Sign In'}
+              </button>
+            </form>
+
+            {/* Guest */}
             <button
-              type="submit"
-              disabled={loading}
+              onClick={handleGuest}
               style={{
-                ...s.primaryBtn,
-                opacity: loading ? 0.7 : 1,
-                cursor: loading ? 'not-allowed' : 'pointer',
+                width: '100%', padding: '10px 0', marginTop: 12,
+                background: 'transparent', border: '1px solid #e2e2e2',
+                borderRadius: 8, cursor: 'pointer',
+                fontSize: 12, color: '#6b7b6c', fontFamily: '"Hanken Grotesk", sans-serif',
+                transition: 'all 0.2s',
               }}
-              onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#006d35'; if (!loading) e.currentTarget.style.color = '#fff'; }}
-              onMouseLeave={e => { e.currentTarget.style.background = '#00e676'; e.currentTarget.style.color = '#00210b'; }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#f3f3f4'; e.currentTarget.style.color = '#1a1c1c'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#6b7b6c'; }}
             >
-              {loading ? 'Signing in…' : 'Sign In'}
+              Continue as Guest (no account needed)
             </button>
-          </form>
 
-          {/* Guest */}
-          <button
-            onClick={handleGuest}
-            style={{
-              width: '100%', padding: '10px 0', marginTop: 12,
-              background: 'transparent', border: '1px solid #e2e2e2',
-              borderRadius: 8, cursor: 'pointer',
-              fontSize: 12, color: '#6b7b6c', fontFamily: '"Hanken Grotesk", sans-serif',
-              transition: 'all 0.2s',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = '#f3f3f4'; e.currentTarget.style.color = '#1a1c1c'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#6b7b6c'; }}
-          >
-            Continue as Guest (no account needed)
-          </button>
+            <p style={{ textAlign: 'center', fontSize: 13, color: '#6b7b6c', marginTop: 28 }}>
+              Don't have an account?{' '}
+              <Link to="/signup" style={{ color: '#006d35', fontWeight: 700, textDecoration: 'none' }}>Sign Up →</Link>
+            </p>
+          </div>
+        )}
 
-          <p style={{ textAlign: 'center', fontSize: 13, color: '#6b7b6c', marginTop: 28 }}>
-            Don't have an account?{' '}
-            <Link to="/signup" style={{ color: '#006d35', fontWeight: 700, textDecoration: 'none' }}>Sign Up →</Link>
-          </p>
-        </div>
+        {mode === 'forgot' && (
+          <div style={s.card}>
+            <h1 style={s.heading}>Reset Password</h1>
+            <p style={s.subheading}>Enter your email to receive a password reset code.</p>
+
+            {/* Success */}
+            {successMsg && <div style={s.success}>✓ {successMsg}</div>}
+
+            {/* Error */}
+            {error && <div style={s.error}>⚠ {error}</div>}
+
+            {/* Form */}
+            <form onSubmit={handleForgotPasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div>
+                <label style={s.label} htmlFor="email">Email Address</label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@company.com"
+                  style={s.input}
+                  onFocus={inputFocus}
+                  onBlur={inputBlur}
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  ...s.primaryBtn,
+                  opacity: loading ? 0.7 : 1,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                }}
+                onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#006d35'; if (!loading) e.currentTarget.style.color = '#fff'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#00e676'; e.currentTarget.style.color = '#00210b'; }}
+              >
+                {loading ? 'Sending code…' : 'Send Reset Code'}
+              </button>
+            </form>
+
+            <p style={{ textAlign: 'center', fontSize: 13, color: '#6b7b6c', marginTop: 28 }}>
+              Remembered your password?{' '}
+              <a href="#" onClick={(e) => { e.preventDefault(); setError(''); setSuccessMsg(''); setMode('login'); }} style={{ color: '#006d35', fontWeight: 700, textDecoration: 'none' }}>Sign In →</a>
+            </p>
+          </div>
+        )}
+
+        {mode === 'reset' && (
+          <div style={s.card}>
+            <h1 style={s.heading}>Verify Code</h1>
+            <p style={s.subheading}>Enter the 6-digit OTP code sent to {email}.</p>
+
+            {/* Success */}
+            {successMsg && <div style={s.success}>✓ {successMsg}</div>}
+
+            {/* Error */}
+            {error && <div style={s.error}>⚠ {error}</div>}
+
+            {/* Form */}
+            <form onSubmit={handleResetPasswordSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+              <div>
+                <label style={s.label} htmlFor="otp">Verification Code</label>
+                <input
+                  id="otp"
+                  type="text"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  placeholder="123456"
+                  maxLength={6}
+                  style={s.input}
+                  onFocus={inputFocus}
+                  onBlur={inputBlur}
+                />
+              </div>
+
+              <div>
+                <label style={s.label} htmlFor="newPassword">New Password</label>
+                <div style={{ position: 'relative' }}>
+                  <input
+                    id="newPassword"
+                    type={showNewPass ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="••••••••"
+                    style={{ ...s.input, paddingRight: 44 }}
+                    onFocus={inputFocus}
+                    onBlur={inputBlur}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPass(!showNewPass)}
+                    style={{
+                      position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
+                      background: 'none', border: 'none', cursor: 'pointer', color: '#6b7b6c',
+                    }}
+                  >
+                    <EyeIcon open={showNewPass} />
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                style={{
+                  ...s.primaryBtn,
+                  opacity: loading ? 0.7 : 1,
+                  cursor: loading ? 'not-allowed' : 'pointer',
+                }}
+                onMouseEnter={e => { if (!loading) e.currentTarget.style.background = '#006d35'; if (!loading) e.currentTarget.style.color = '#fff'; }}
+                onMouseLeave={e => { e.currentTarget.style.background = '#00e676'; e.currentTarget.style.color = '#00210b'; }}
+              >
+                {loading ? 'Resetting password…' : 'Update Password'}
+              </button>
+            </form>
+
+            <p style={{ textAlign: 'center', fontSize: 13, color: '#6b7b6c', marginTop: 28 }}>
+              Back to{' '}
+              <a href="#" onClick={(e) => { e.preventDefault(); setError(''); setSuccessMsg(''); setMode('login'); }} style={{ color: '#006d35', fontWeight: 700, textDecoration: 'none' }}>Sign In →</a>
+            </p>
+          </div>
+        )}
       </main>
 
       {/* Footer */}
@@ -275,7 +460,6 @@ function Login() {
           <span style={{ fontWeight: 700, fontSize: 14, color: '#006d35', fontFamily: '"Hanken Grotesk", sans-serif' }}>Sentivvo</span>
           <span style={s.footerText}>© Sentivvo Market Intelligence. All rights reserved.</span>
         </div>
-      
       </footer>
     </div>
   );

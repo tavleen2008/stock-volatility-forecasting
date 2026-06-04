@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronDown, Home, TrendingUp, Eye, BarChart3, BookOpen, Briefcase, Zap, Activity, Building2, Gauge, Layers, Globe, Settings } from 'lucide-react';
+import { ChevronDown, Home, TrendingUp, Eye, BarChart3, BookOpen, Briefcase, Zap, Activity, Building2, Gauge, Layers, Globe, Settings, Filter } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 function Sidebar({ isOpen, isDarkMode }) {
@@ -32,6 +32,7 @@ function Sidebar({ isOpen, isDarkMode }) {
       items: [
         { label: 'My Portfolio',        href: '/dashboard/portfolio',  icon: <Briefcase size={18} />, badge: 'new' },
         { label: 'Volatility Forecast',  href: '/dashboard/forecasts',  icon: <Zap size={18} />,      badge: 'new' },
+        { label: 'Stock Screener',       href: '/dashboard/screener',   icon: <Filter size={18} />,   badge: 'new' },
         { label: 'Market News',          href: '/dashboard/news',       icon: <BookOpen size={18} />,  badge: 'live' },
         { label: 'Compare Stocks',       href: '/dashboard/compare',    icon: <BarChart3 size={18} />, badge: 'new' },
         { label: 'Market Movers',        href: '/dashboard/mov',        icon: <TrendingUp size={18} />, badge: 'mov' },

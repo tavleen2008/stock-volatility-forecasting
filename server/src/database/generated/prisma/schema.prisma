@@ -28,6 +28,8 @@ model User {
 
   isVerified Boolean @default(false)
 
+  followedStocks String[] @default([])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -58,4 +60,17 @@ model NewsArticle {
 
   @@index([symbol])
   @@index([publishedAt])
+}
+
+model Forecast {
+  id                 String   @id @default(uuid())
+  symbol             String
+  forecastDate       DateTime // The date the forecast is FOR
+  forecastVolatility Float
+  confidenceScore    Float
+  sentimentScore     Float
+  fullPayload        Json // Stores the entire rich ML response
+  createdAt          DateTime @default(now())
+
+  @@index([symbol, forecastDate])
 }

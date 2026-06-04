@@ -17,3 +17,5 @@ great-expectations>=0.18.14
 evidently>=0.4.24
 joblib>=1.4.2
 python-dateutil>=2.9.0
+fastapi>=0.105.0
+uvicorn>=0.34.0

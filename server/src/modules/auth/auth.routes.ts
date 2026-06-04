@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import passport from '../../config/passport';
-import { googleCallback, me, sendVerificationCode, verifyRegistration, resendCode, login, refresh, logout } from './auth.controller';
+import { googleCallback, me, sendVerificationCode, verifyRegistration, resendCode, login, refresh, logout, forgotPassword, resetPassword } from './auth.controller';
 import { authMiddleware } from '../../middleware/auth.middleware';
 
 const router = Router();
@@ -12,6 +12,9 @@ router.post('/register/resend-code', resendCode);
 // Client-facing aliases directly under /api/auth
 router.post('/send-code', sendVerificationCode);
 router.post('/verify', verifyRegistration);
+
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 router.post('/login', login);
 router.post('/refresh', refresh);

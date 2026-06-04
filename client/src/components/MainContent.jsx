@@ -42,6 +42,7 @@ function MainContent({ isDarkMode }) {
         e.preventDefault();
         window.history.pushState({}, '', href);
         setCurrentPage(getPage(href));
+        window.dispatchEvent(new PopStateEvent('popstate'));
       }
     };
     document.addEventListener('click', handleClick);

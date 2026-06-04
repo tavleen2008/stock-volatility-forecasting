@@ -231,6 +231,7 @@ function SecurityAnalysis({ isDarkMode = false }) {
   const navigateTab = (item) => {
     window.history.pushState({}, '', item.path);
     setActiveTab(item.key);
+    window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
   const field = (source, keys) => {

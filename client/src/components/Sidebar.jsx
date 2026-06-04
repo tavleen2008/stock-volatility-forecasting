@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronDown, Home, TrendingUp, Eye, BarChart3, BookOpen, Briefcase, Zap, Activity, Building2, Gauge, Layers } from 'lucide-react';
+import { ChevronDown, Home, TrendingUp, Eye, BarChart3, BookOpen, Briefcase, Zap, Activity, Building2, Gauge, Layers, Globe } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
 function Sidebar({ isOpen, isDarkMode }) {
@@ -51,17 +51,7 @@ function Sidebar({ isOpen, isDarkMode }) {
     {
       title: 'Market Overview',
       items: [
-        { label: 'Market Indices', href: '/dashboard/market/indices' },
-        { label: 'Sectors', href: '/dashboard/market/sectors' },
-        { label: 'Top Gainers', href: '/dashboard/market/gainers' },
-      ],
-    },
-    {
-      title: 'Research Tools',
-      items: [
-        { label: 'Financial Screener', href: '/dashboard/screener' },
-        { label: 'Portfolio Analysis', href: '/dashboard/portfolio' },
-        { label: 'Economic Calendar', href: '/dashboard/calendar' },
+        { label: 'Market Overview', href: '/dashboard/market', icon: <Globe size={18} /> },
       ],
     },
   ];

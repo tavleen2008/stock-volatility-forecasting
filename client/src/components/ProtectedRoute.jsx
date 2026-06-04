@@ -49,7 +49,7 @@ function ProtectedRoute({ children }) {
         justifyContent: 'center',
         background: '#090d16',
         color: '#f8fafc',
-        fontFamily: 'system-ui, -apple-system, sans-serif'
+        fontFamily: "'Inter', system-ui, -apple-system, sans-serif"
       }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
           <div style={{

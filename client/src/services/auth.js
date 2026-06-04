@@ -1,6 +1,6 @@
+import { TOKEN_KEY, SESSION_KEY } from '../utils/constants';
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const SESSION_KEY = 'sentivvo_current_session';
-const TOKEN_KEY = 'svf_access_token';
 
 export const authService = {
   /** Login with email + password against the real backend */

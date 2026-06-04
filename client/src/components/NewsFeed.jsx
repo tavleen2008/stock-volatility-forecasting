@@ -6,37 +6,7 @@ import {
 import { newsApi } from '../utils/api';
 import { TRACKED_SYMBOLS } from '../utils/constants';
 
-/* ─── Sentiment detection ──────────────────────────────────────────── */
-const BULLISH_WORDS = [
-  'surge', 'surges', 'rally', 'rallies', 'gain', 'gains', 'soar', 'soars',
-  'rise', 'rises', 'beat', 'beats', 'record', 'high', 'profit', 'bullish',
-  'upgrade', 'strong', 'growth', 'positive', 'outperform', 'buy', 'breakthrough',
-];
-const BEARISH_WORDS = [
-  'drop', 'drops', 'fall', 'falls', 'decline', 'declines', 'crash', 'crashes',
-  'loss', 'losses', 'miss', 'misses', 'low', 'weak', 'bearish', 'downgrade',
-  'cut', 'layoff', 'layoffs', 'warning', 'risk', 'sell', 'recession', 'concern',
-];
-
-function getSentiment(text = '') {
-  const lower = text.toLowerCase();
-  const bullScore = BULLISH_WORDS.filter((w) => lower.includes(w)).length;
-  const bearScore = BEARISH_WORDS.filter((w) => lower.includes(w)).length;
-  if (bullScore > bearScore) return 'bullish';
-  if (bearScore > bullScore) return 'bearish';
-  return 'neutral';
-}
-
-/* ─── Time-ago formatter ────────────────────────────────────────────── */
-function timeAgo(dateStr) {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins  = Math.floor(diff / 60_000);
-  const hours = Math.floor(diff / 3_600_000);
-  const days  = Math.floor(diff / 86_400_000);
-  if (mins < 60)  return `${mins}m ago`;
-  if (hours < 24) return `${hours}h ago`;
-  return `${days}d ago`;
-}
+import { getSentiment, timeAgo } from '../utils/helpers';
 
 /* ─── Skeleton card ──────────────────────────────────────────────────── */
 function SkeletonCard({ isDarkMode }) {

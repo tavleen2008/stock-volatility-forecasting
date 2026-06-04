@@ -26,10 +26,7 @@ import {
   YAxis,
 } from 'recharts';
 import { forecastApi, newsApi, stocksApi } from '../utils/api';
-import { INITIAL_HOLDINGS, TRACKED_SYMBOLS } from '../utils/constants';
-
-const BULL = ['surge', 'rally', 'gain', 'soar', 'rise', 'beat', 'record', 'high', 'profit', 'bullish', 'strong', 'upgrade'];
-const BEAR = ['drop', 'fall', 'decline', 'crash', 'loss', 'miss', 'low', 'weak', 'bearish', 'downgrade', 'cut', 'layoff', 'warning', 'risk'];
+import { INITIAL_HOLDINGS, TRACKED_SYMBOLS, BULLISH_WORDS, BEARISH_WORDS } from '../utils/constants';
 
 const TABS = [
   { key: 'snapshot', label: 'Snapshot', path: '/dashboard/snapshot', icon: ShieldCheck },
@@ -53,8 +50,8 @@ function getTabFromPath(path) {
 
 function scoreSentiment(text = '') {
   const lower = text.toLowerCase();
-  const bull = BULL.filter((word) => lower.includes(word)).length;
-  const bear = BEAR.filter((word) => lower.includes(word)).length;
+  const bull = BULLISH_WORDS.filter((word) => lower.includes(word)).length;
+  const bear = BEARISH_WORDS.filter((word) => lower.includes(word)).length;
   return bull - bear;
 }
 

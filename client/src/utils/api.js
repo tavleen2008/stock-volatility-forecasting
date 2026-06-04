@@ -1,6 +1,6 @@
+import { TOKEN_KEY, SESSION_KEY } from './constants';
+
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-const TOKEN_KEY = 'svf_access_token';
-const SESSION_KEY = 'sentivvo_current_session';
 
 /**
  * Attempts a single token refresh if the access token has expired.

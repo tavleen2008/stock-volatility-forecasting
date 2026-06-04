@@ -6,6 +6,7 @@ import Forecasts from './Forecasts';
 import NewsFeed from './NewsFeed';
 import StockComparison from './StockComparison';
 import SecurityAnalysis from './SecurityAnalysis';
+import MarketOverview from './MarketOverview';
 
 const ROUTES = {
   '/portfolio': 'portfolio',
@@ -15,6 +16,7 @@ const ROUTES = {
   '/compare':   'compare',
   '/snapshot':  'security',
   '/security':  'security',
+  '/market':    'market',
 };
 
 function getPage(path) {
@@ -28,6 +30,7 @@ function MainContent({ isDarkMode }) {
   const { pathname } = useLocation();
   const currentPage = getPage(pathname);
 
+
   return (
     <main
       className={`flex-1 overflow-y-auto p-5 transition-colors duration-300 ${
@@ -38,6 +41,7 @@ function MainContent({ isDarkMode }) {
       {currentPage === 'forecasts'  && <Forecasts  isDarkMode={isDarkMode} />}
       {currentPage === 'news'       && <NewsFeed   isDarkMode={isDarkMode} />}
       {currentPage === 'security'   && <SecurityAnalysis isDarkMode={isDarkMode} />}
+      {currentPage === 'market'     && <MarketOverview isDarkMode={isDarkMode} />}
       {currentPage === 'compare'    && (
         <div className="flex flex-col gap-6 animate-fade-in">
           <div>

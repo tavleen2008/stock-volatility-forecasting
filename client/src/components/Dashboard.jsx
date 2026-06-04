@@ -8,21 +8,7 @@ import { stocksApi, newsApi } from '../utils/api';
 import StockComparison from './StockComparison';
 
 import { TRACKED_SYMBOLS } from '../utils/constants';
-
-/* ── Sentiment helper (shared with NewsFeed) ──── */
-const BULL = ['surge','rally','gain','soar','rise','beat','record','high','profit','bullish','strong','upgrade'];
-const BEAR = ['drop','fall','decline','crash','loss','miss','low','weak','bearish','downgrade','cut','layoff','warning','risk'];
-const getSentiment = (t = '') => {
-  const l = t.toLowerCase();
-  const b = BULL.filter(w => l.includes(w)).length;
-  const r = BEAR.filter(w => l.includes(w)).length;
-  return b > r ? 'bullish' : r > b ? 'bearish' : 'neutral';
-};
-const timeAgo = (d) => {
-  const diff = Date.now() - new Date(d).getTime();
-  const m = Math.floor(diff / 60_000), h = Math.floor(diff / 3_600_000);
-  return m < 60 ? `${m}m ago` : h < 24 ? `${h}h ago` : `${Math.floor(diff/86_400_000)}d ago`;
-};
+import { getSentiment, timeAgo } from '../utils/helpers';
 
 const RANGE_OPTIONS = ['1d', '5d', '1mo', '3mo', '1y'];
 

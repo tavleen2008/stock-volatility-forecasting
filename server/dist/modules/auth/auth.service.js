@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.revokeRefreshToken = exports.verifyAndRefresh = exports.generateTokens = exports.loginUser = exports.resendVerificationCode = exports.verifyCodeAndRegister = exports.sendVerificationCode = void 0;
+exports.resetPassword = exports.forgotPassword = exports.revokeRefreshToken = exports.verifyAndRefresh = exports.generateTokens = exports.loginUser = exports.resendVerificationCode = exports.verifyCodeAndRegister = exports.sendVerificationCode = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const prisma_1 = require("../../config/prisma");
@@ -43,7 +43,6 @@ const verifyCodeAndRegister = async (data) => {
     if (pendingUser.code !== data.code) {
         throw new Error('Invalid verification code');
     }
-    // Code is valid, create the user
     const user = await prisma_1.prisma.user.create({
         data: {
             email: pendingUser.email,
@@ -53,7 +52,6 @@ const verifyCodeAndRegister = async (data) => {
             isVerified: true,
         },
     });
-    // Clean up Redis
     await (0, redis_1.safeDel)(`pending_user:${data.email}`);
     return user;
 };
@@ -102,7 +100,6 @@ const generateTokens = async (user) => {
     const refreshToken = jsonwebtoken_1.default.sign(payload, env_1.default.jwtRefreshSecret, {
         expiresIn: auth_constants_1.AUTH_CONSTANTS.REFRESH_TOKEN_EXPIRES_IN,
     });
-    // Save refresh token to Redis
     await (0, redis_1.safeSet)(`refresh_token:${user.id}`, refreshToken, 'EX', auth_constants_1.AUTH_CONSTANTS.REFRESH_TOKEN_REDIS_TTL);
     return { accessToken, refreshToken };
 };
@@ -136,7 +133,53 @@ const revokeRefreshToken = async (token) => {
         }
     }
     catch (error) {
-        // Ignore parsing errors, just fail silently during logout
+        throw new Error('Failed to revoke refresh token');
     }
 };
 exports.revokeRefreshToken = revokeRefreshToken;
+const forgotPassword = async (data) => {
+    const user = await prisma_1.prisma.user.findUnique({
+        where: { email: data.email },
+    });
+    if (!user || user.provider !== 'LOCAL') {
+        // We do not throw an error if the user does not exist to prevent email enumeration attacks
+        // Just return silently
+        return;
+    }
+    const code = generateOTP();
+    // Store reset code in Redis
+    const resetData = {
+        email: data.email,
+        code,
+    };
+    await (0, redis_1.safeSet)(`password_reset:${data.email}`, JSON.stringify(resetData), 'EX', CODE_EXPIRY_SECONDS);
+    // As requested, log to console instead of sending email for now
+    console.log(`\n================================`);
+    console.log(`🔑 PASSWORD RESET CODE FOR ${data.email}`);
+    console.log(`CODE: ${code}`);
+    console.log(`================================\n`);
+};
+exports.forgotPassword = forgotPassword;
+const resetPassword = async (data) => {
+    const resetDataStr = await (0, redis_1.safeGet)(`password_reset:${data.email}`);
+    if (!resetDataStr) {
+        throw new Error('Reset code expired or invalid email');
+    }
+    const resetData = JSON.parse(resetDataStr);
+    if (resetData.code !== data.code) {
+        throw new Error('Invalid reset code');
+    }
+    const hashedPassword = await bcryptjs_1.default.hash(data.newPassword, 10);
+    await prisma_1.prisma.user.update({
+        where: { email: data.email },
+        data: { password: hashedPassword },
+    });
+    // Delete the reset code
+    await (0, redis_1.safeDel)(`password_reset:${data.email}`);
+    // Also revoke all refresh tokens so they are logged out of all devices
+    const user = await prisma_1.prisma.user.findUnique({ where: { email: data.email } });
+    if (user) {
+        await (0, redis_1.safeDel)(`refresh_token:${user.id}`);
+    }
+};
+exports.resetPassword = resetPassword;

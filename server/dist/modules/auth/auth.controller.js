@@ -36,7 +36,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.logout = exports.refresh = exports.login = exports.resendCode = exports.verifyRegistration = exports.sendVerificationCode = exports.me = exports.googleCallback = void 0;
+exports.resetPassword = exports.forgotPassword = exports.logout = exports.refresh = exports.login = exports.resendCode = exports.verifyRegistration = exports.sendVerificationCode = exports.me = exports.googleCallback = void 0;
 const zod_1 = require("zod");
 const authService = __importStar(require("./auth.service"));
 const env_1 = __importDefault(require("../../config/env"));
@@ -66,10 +66,6 @@ const googleCallback = async (req, res, next) => {
             return res.status(401).json({ message: 'Authentication failed' });
         }
         const { accessToken, refreshToken } = await authService.generateTokens(user);
-        // We can't easily set cookies on a redirect if the frontend is on a different domain,
-        // but for local dev with same domain it works. For production OAuth, usually you redirect
-        // with a short-lived one-time code to exchange for tokens on the frontend.
-        // For simplicity here, we'll set the cookie and redirect with access token.
         setRefreshTokenCookie(res, refreshToken);
         if (env_1.default.frontendUrl) {
             const redirectUrl = `${env_1.default.frontendUrl.replace(/\/$/, '')}/auth/success?token=${encodeURIComponent(accessToken)}`;
@@ -211,3 +207,39 @@ const logout = async (req, res, next) => {
     }
 };
 exports.logout = logout;
+const forgotPassword = async (req, res, next) => {
+    try {
+        const data = auth_schemas_1.forgotPasswordSchema.parse(req.body);
+        await authService.forgotPassword(data);
+        // We always return success to prevent email enumeration attacks
+        return res.status(200).json({
+            message: 'If that email is registered, a password reset code has been sent.',
+        });
+    }
+    catch (error) {
+        if (error instanceof zod_1.z.ZodError) {
+            return res.status(400).json({ message: 'Validation failed', errors: error.errors });
+        }
+        return next(error);
+    }
+};
+exports.forgotPassword = forgotPassword;
+const resetPassword = async (req, res, next) => {
+    try {
+        const data = auth_schemas_1.resetPasswordSchema.parse(req.body);
+        await authService.resetPassword(data);
+        return res.status(200).json({
+            message: 'Password reset successfully. You can now log in with your new password.',
+        });
+    }
+    catch (error) {
+        if (error instanceof zod_1.z.ZodError) {
+            return res.status(400).json({ message: 'Validation failed', errors: error.errors });
+        }
+        if (error instanceof Error && (error.message === 'Invalid reset code' || error.message === 'Reset code expired or invalid email')) {
+            return res.status(400).json({ message: error.message });
+        }
+        return next(error);
+    }
+};
+exports.resetPassword = resetPassword;

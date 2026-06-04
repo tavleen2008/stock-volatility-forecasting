@@ -14,6 +14,7 @@ passport_1.default.use(new passport_google_oauth20_1.Strategy({
     clientID: env_1.default.googleClientId,
     clientSecret: env_1.default.googleClientSecret,
     callbackURL: env_1.default.googleRedirectUri,
+    scope: ['profile', 'email'],
     passReqToCallback: false,
 }, async (_accessToken, _refreshToken, profile, done) => {
     try {

@@ -14,6 +14,8 @@ router.post('/register/resend-code', auth_controller_1.resendCode);
 // Client-facing aliases directly under /api/auth
 router.post('/send-code', auth_controller_1.sendVerificationCode);
 router.post('/verify', auth_controller_1.verifyRegistration);
+router.post('/forgot-password', auth_controller_1.forgotPassword);
+router.post('/reset-password', auth_controller_1.resetPassword);
 router.post('/login', auth_controller_1.login);
 router.post('/refresh', auth_controller_1.refresh);
 router.post('/logout', auth_controller_1.logout);

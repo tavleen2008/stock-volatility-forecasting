@@ -1,8 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getStockDashboard = exports.getStockHistory = exports.getStockMetrics = exports.listStocks = void 0;
+exports.getStockProfile = exports.getStockOverview = exports.getStockDashboard = exports.getStockHistory = exports.getStockMetrics = exports.listStocks = void 0;
 const stock_service_1 = require("./stock.service");
-/** GET /api/stocks — list of all tracked stocks with live quotes */
 const listStocks = async (_req, res) => {
     try {
         const stocks = await (0, stock_service_1.fetchTrackedStocksList)();
@@ -14,7 +13,6 @@ const listStocks = async (_req, res) => {
     }
 };
 exports.listStocks = listStocks;
-/** GET /api/stocks/:symbol — individual stock metrics */
 const getStockMetrics = async (req, res) => {
     const { symbol } = req.params;
     if (!symbol)
@@ -25,7 +23,6 @@ const getStockMetrics = async (req, res) => {
     res.json(metrics);
 };
 exports.getStockMetrics = getStockMetrics;
-/** GET /api/stocks/:symbol/history?range=1mo */
 const getStockHistory = async (req, res) => {
     const { symbol } = req.params;
     const range = req.query.range || '1mo';
@@ -41,7 +38,6 @@ const getStockHistory = async (req, res) => {
     }
 };
 exports.getStockHistory = getStockHistory;
-/** GET /api/stocks/:symbol/dashboard — full dashboard payload */
 const getStockDashboard = async (req, res) => {
     const { symbol } = req.params;
     if (!symbol)
@@ -56,3 +52,37 @@ const getStockDashboard = async (req, res) => {
     }
 };
 exports.getStockDashboard = getStockDashboard;
+/** GET /api/stocks/:symbol/overview — extended quote with P/E, beta, 52-wk, dividends etc. */
+const getStockOverview = async (req, res) => {
+    const { symbol } = req.params;
+    if (!symbol)
+        return res.status(400).json({ message: 'Symbol is required' });
+    try {
+        const overview = await (0, stock_service_1.fetchStockOverview)(symbol.toUpperCase());
+        if (!overview)
+            return res.status(404).json({ message: `Stock ${symbol} not found` });
+        res.json(overview);
+    }
+    catch (error) {
+        console.error(`[Stock Controller] Error fetching overview for ${symbol}:`, error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+exports.getStockOverview = getStockOverview;
+/** GET /api/stocks/:symbol/profile — company description, sector, industry, employees */
+const getStockProfile = async (req, res) => {
+    const { symbol } = req.params;
+    if (!symbol)
+        return res.status(400).json({ message: 'Symbol is required' });
+    try {
+        const profile = await (0, stock_service_1.fetchStockProfile)(symbol.toUpperCase());
+        if (!profile)
+            return res.status(404).json({ message: `Profile for ${symbol} not found` });
+        res.json(profile);
+    }
+    catch (error) {
+        console.error(`[Stock Controller] Error fetching profile for ${symbol}:`, error);
+        res.status(500).json({ message: 'Internal Server Error' });
+    }
+};
+exports.getStockProfile = getStockProfile;

@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Activity,
   AlertTriangle,
@@ -31,12 +32,12 @@ const BULL = ['surge', 'rally', 'gain', 'soar', 'rise', 'beat', 'record', 'high'
 const BEAR = ['drop', 'fall', 'decline', 'crash', 'loss', 'miss', 'low', 'weak', 'bearish', 'downgrade', 'cut', 'layoff', 'warning', 'risk'];
 
 const TABS = [
-  { key: 'snapshot', label: 'Snapshot', path: '/snapshot', icon: ShieldCheck },
-  { key: 'overview', label: 'Overview', path: '/snapshot/s', icon: Activity },
-  { key: 'description', label: 'Description', path: '/snapshot/des', icon: Building2 },
-  { key: 'rank', label: 'Percentile Rank', path: '/snapshot/rank', icon: Gauge },
-  { key: 'exposure', label: 'Exposure', path: '/snapshot/fxp', icon: Layers },
-  { key: 'holdings', label: 'Holdings', path: '/snapshot/hds', icon: Briefcase },
+  { key: 'snapshot', label: 'Snapshot', path: '/dashboard/snapshot', icon: ShieldCheck },
+  { key: 'overview', label: 'Overview', path: '/dashboard/snapshot/s', icon: Activity },
+  { key: 'description', label: 'Description', path: '/dashboard/snapshot/des', icon: Building2 },
+  { key: 'rank', label: 'Percentile Rank', path: '/dashboard/snapshot/rank', icon: Gauge },
+  { key: 'exposure', label: 'Exposure', path: '/dashboard/snapshot/fxp', icon: Layers },
+  { key: 'holdings', label: 'Holdings', path: '/dashboard/snapshot/hds', icon: Briefcase },
 ];
 
 const PIE_COLORS = ['#0f766e', '#2563eb', '#f59e0b', '#db2777', '#7c3aed', '#16a34a'];
@@ -114,7 +115,10 @@ function MetricCard({ label, value, sub, icon: Icon, tone = 'default', isDarkMod
 }
 
 function SecurityAnalysis({ isDarkMode = false }) {
-  const [activeTab, setActiveTab] = useState(() => getTabFromPath(window.location.pathname));
+  const navigate = useNavigate();
+  const location = useLocation();
+  const activeTab = useMemo(() => getTabFromPath(location.pathname), [location.pathname]);
+
   const [symbol, setSymbol] = useState(TRACKED_SYMBOLS[0]);
   const [stocks, setStocks] = useState([]);
   const [overview, setOverview] = useState(null);
@@ -123,12 +127,6 @@ function SecurityAnalysis({ isDarkMode = false }) {
   const [news, setNews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const sync = () => setActiveTab(getTabFromPath(window.location.pathname));
-    window.addEventListener('popstate', sync);
-    return () => window.removeEventListener('popstate', sync);
-  }, []);
 
   const loadAnalysis = useCallback(async () => {
     setLoading(true);
@@ -229,9 +227,7 @@ function SecurityAnalysis({ isDarkMode = false }) {
   const tab = TABS.find((item) => item.key === activeTab) || TABS[0];
 
   const navigateTab = (item) => {
-    window.history.pushState({}, '', item.path);
-    setActiveTab(item.key);
-    window.dispatchEvent(new PopStateEvent('popstate'));
+    navigate(item.path);
   };
 
   const field = (source, keys) => {

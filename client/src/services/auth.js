@@ -111,6 +111,40 @@ export const authService = {
   /** Get the stored JWT token */
   getToken: () => localStorage.getItem(TOKEN_KEY),
 
+  /** Request password reset code */
+  forgotPassword: async (email) => {
+    try {
+      const res = await fetch(`${API_URL}/api/auth/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      let data;
+      try { data = await res.json(); } catch { data = null; }
+      if (!res.ok) return { success: false, error: data?.message || res.statusText || 'Request failed' };
+      return { success: true, message: data?.message };
+    } catch {
+      return { success: false, error: 'Network error.' };
+    }
+  },
+
+  /** Reset password using OTP code */
+  resetPassword: async (email, code, newPassword) => {
+    try {
+      const res = await fetch(`${API_URL}/api/auth/reset-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, code, newPassword }),
+      });
+      let data;
+      try { data = await res.json(); } catch { data = null; }
+      if (!res.ok) return { success: false, error: data?.message || res.statusText || 'Request failed' };
+      return { success: true, message: data?.message };
+    } catch {
+      return { success: false, error: 'Network error.' };
+    }
+  },
+
   /** Clear all session data */
   logout: async () => {
     const token = localStorage.getItem(TOKEN_KEY);

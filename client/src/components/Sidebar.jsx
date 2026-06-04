@@ -1,20 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { ChevronDown, Home, TrendingUp, Eye, BarChart3, BookOpen, Briefcase, Zap, Activity, Building2, Gauge, Layers } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 
 function Sidebar({ isOpen, isDarkMode }) {
   const [expandedSections, setExpandedSections] = useState(['Favorites']);
-  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const { pathname: currentPath } = useLocation();
 
   useEffect(() => {
-    const syncPath = () => setCurrentPath(window.location.pathname);
-    const syncPathAfterClick = () => setTimeout(syncPath, 0);
-    window.addEventListener('popstate', syncPath);
-    document.addEventListener('click', syncPathAfterClick);
-    return () => {
-      window.removeEventListener('popstate', syncPath);
-      document.removeEventListener('click', syncPathAfterClick);
-    };
-  }, []);
+    if (currentPath.startsWith('/dashboard/snapshot') && !expandedSections.includes('Security Analysis')) {
+      setExpandedSections((prev) => [...prev, 'Security Analysis']);
+    }
+  }, [currentPath, expandedSections]);
 
   const toggleSection = (section) => {
     setExpandedSections((prev) =>
@@ -34,38 +30,38 @@ function Sidebar({ isOpen, isDarkMode }) {
     {
       title: 'Favorites',
       items: [
-        { label: 'My Portfolio',        href: '/portfolio',  icon: <Briefcase size={18} />, badge: 'new' },
-        { label: 'Volatility Forecast',  href: '/forecasts',  icon: <Zap size={18} />,      badge: 'new' },
-        { label: 'Market News',          href: '/news',       icon: <BookOpen size={18} />,  badge: 'live' },
-        { label: 'Compare Stocks',       href: '/compare',    icon: <BarChart3 size={18} />, badge: 'new' },
-        { label: 'Market Movers',        href: '/mov',        icon: <TrendingUp size={18} />, badge: 'mov' },
+        { label: 'My Portfolio',        href: '/dashboard/portfolio',  icon: <Briefcase size={18} />, badge: 'new' },
+        { label: 'Volatility Forecast',  href: '/dashboard/forecasts',  icon: <Zap size={18} />,      badge: 'new' },
+        { label: 'Market News',          href: '/dashboard/news',       icon: <BookOpen size={18} />,  badge: 'live' },
+        { label: 'Compare Stocks',       href: '/dashboard/compare',    icon: <BarChart3 size={18} />, badge: 'new' },
+        { label: 'Market Movers',        href: '/dashboard/mov',        icon: <TrendingUp size={18} />, badge: 'mov' },
       ],
     },
     {
       title: 'Security Analysis',
       items: [
-        { label: 'Snapshots', href: '/snapshot', icon: <Eye size={18} /> },
-        { label: 'Overview', href: '/snapshot/s', icon: <Activity size={18} /> },
-        { label: 'Description', href: '/snapshot/des', icon: <Building2 size={18} /> },
-        { label: 'Percentile Rank', href: '/snapshot/rank', icon: <Gauge size={18} /> },
-        { label: 'Exposure', href: '/snapshot/fxp', icon: <Layers size={18} /> },
-        { label: 'Holdings', href: '/snapshot/hds', icon: <Briefcase size={18} /> },
+        { label: 'Snapshots', href: '/dashboard/snapshot', icon: <Eye size={18} /> },
+        { label: 'Overview', href: '/dashboard/snapshot/s', icon: <Activity size={18} /> },
+        { label: 'Description', href: '/dashboard/snapshot/des', icon: <Building2 size={18} /> },
+        { label: 'Percentile Rank', href: '/dashboard/snapshot/rank', icon: <Gauge size={18} /> },
+        { label: 'Exposure', href: '/dashboard/snapshot/fxp', icon: <Layers size={18} /> },
+        { label: 'Holdings', href: '/dashboard/snapshot/hds', icon: <Briefcase size={18} /> },
       ],
     },
     {
       title: 'Market Overview',
       items: [
-        { label: 'Market Indices', href: '/market/indices' },
-        { label: 'Sectors', href: '/market/sectors' },
-        { label: 'Top Gainers', href: '/market/gainers' },
+        { label: 'Market Indices', href: '/dashboard/market/indices' },
+        { label: 'Sectors', href: '/dashboard/market/sectors' },
+        { label: 'Top Gainers', href: '/dashboard/market/gainers' },
       ],
     },
     {
       title: 'Research Tools',
       items: [
-        { label: 'Financial Screener', href: '/screener' },
-        { label: 'Portfolio Analysis', href: '/portfolio' },
-        { label: 'Economic Calendar', href: '/calendar' },
+        { label: 'Financial Screener', href: '/dashboard/screener' },
+        { label: 'Portfolio Analysis', href: '/dashboard/portfolio' },
+        { label: 'Economic Calendar', href: '/dashboard/calendar' },
       ],
     },
   ];
@@ -95,16 +91,14 @@ function Sidebar({ isOpen, isDarkMode }) {
             {expandedSections.includes(section.title) && (
               <ul className="list-none py-1 px-0 m-0">
                 {section.items.map((item, idx) => {
-                  const active = item.href === '/dashboard'
-                    ? currentPath === '/dashboard' || currentPath === '/dashboard/'
-                    : item.href === '/snapshot'
-                      ? currentPath === '/snapshot' || currentPath === '/snapshot/'
-                      : currentPath.includes(item.href);
+                  const active = (item.href === '/dashboard' || item.href === '/dashboard/snapshot')
+                    ? currentPath === item.href || currentPath === `${item.href}/`
+                    : currentPath.includes(item.href);
 
                   return (
                   <li key={idx}>
-                    <a 
-                      href={item.href} 
+                    <Link
+                      to={item.href}
                       className={`flex items-center gap-2.5 px-4 py-2 text-sm no-underline transition-all border-l-3 border-transparent
                         ${active ? (isDarkMode ? 'sv-nav-active' : 'sv-nav-active-light') : ''}
                         ${isDarkMode
@@ -114,7 +108,7 @@ function Sidebar({ isOpen, isDarkMode }) {
                       {item.icon && <span className="flex items-center justify-center w-4.5 h-4.5 flex-shrink-0">{item.icon}</span>}
                       <span className="flex-1 text-left">{item.label}</span>
                       {item.badge && <span className={`inline-block py-0.5 px-1.5 rounded text-xs ml-auto ${isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-gray-200 text-gray-600'}`}>{item.badge}</span>}
-                    </a>
+                    </Link>
                   </li>
                   );
                 })}

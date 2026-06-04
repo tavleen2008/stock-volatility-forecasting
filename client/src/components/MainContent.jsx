@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { useLocation } from 'react-router-dom';
 import Dashboard from './Dashboard';
 import Portfolio from './Portfolio';
 import Forecasts from './Forecasts';
@@ -24,30 +25,8 @@ function getPage(path) {
 }
 
 function MainContent({ isDarkMode }) {
-  const [currentPage, setCurrentPage] = useState(() => getPage(window.location.pathname));
-
-  useEffect(() => {
-    const handlePopState = () => setCurrentPage(getPage(window.location.pathname));
-    window.addEventListener('popstate', handlePopState);
-    return () => window.removeEventListener('popstate', handlePopState);
-  }, []);
-
-  // Allow sidebar <a> clicks to update page without full reload
-  useEffect(() => {
-    const handleClick = (e) => {
-      const anchor = e.target.closest('a[href]');
-      if (!anchor) return;
-      const href = anchor.getAttribute('href');
-      if (href && href.startsWith('/') && !href.startsWith('//')) {
-        e.preventDefault();
-        window.history.pushState({}, '', href);
-        setCurrentPage(getPage(href));
-        window.dispatchEvent(new PopStateEvent('popstate'));
-      }
-    };
-    document.addEventListener('click', handleClick);
-    return () => document.removeEventListener('click', handleClick);
-  }, []);
+  const { pathname } = useLocation();
+  const currentPage = getPage(pathname);
 
   return (
     <main

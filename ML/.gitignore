@@ -1,0 +1,39 @@
+# Virtual Environments
+.venv/
+venv/
+env/
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# ML / Data Science specifics
+*.csv
+*.dat
+*.pkl
+*.joblib
+*.h5
+*.hdf5
+*.npy
+*.npz
+
+# MLflow
+mlruns/
+*.db
+
+# Outputs / Artifacts
+artifacts/
+graphify-out/
+outputs/
+temp.db
+
+# Environments
+.env
+.env.*
+
+# Testing / Typing
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/

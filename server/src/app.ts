@@ -1,0 +1,45 @@
+import express from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
+import passport from './config/passport';
+
+import authRouter from './modules/auth/auth.routes';
+import usersRouter from './modules/users/user.routes';
+import newsRouter from './modules/news/news.routes';
+import stocksRouter from './modules/stocks/stock.routes';
+import forecastsRouter from './modules/forecasts/forecast.routes';
+import healthRouter from './modules/health/health.routes';
+import marketRouter from './modules/market/market.routes';
+import dashboardRouter from './modules/dashboard/dashboard.routes';
+import errorMiddleware from './middleware/error.middleware';
+import requestLogger from './middleware/request-logger.middleware';
+import config from './config/env';
+
+const app = express();
+
+app.use(cors({
+    origin: config.frontendUrl || 'http://localhost:5173',
+    credentials: true,
+}));
+app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
+app.use(express.json());
+app.use(cookieParser());
+app.use(passport.initialize());
+
+app.use(requestLogger);
+
+app.use('/api/auth', authRouter);
+app.use('/api/users', usersRouter);
+app.use('/api/news', newsRouter);
+app.use('/api/stocks', stocksRouter);
+app.use('/api/forecasts', forecastsRouter);
+app.use('/api/market', marketRouter);
+app.use('/api/dashboard', dashboardRouter);
+app.use('/api/health', healthRouter);
+
+app.get('/', (_req, res) => res.json({ status: 'ok' }));
+
+app.use(errorMiddleware);
+
+export default app;

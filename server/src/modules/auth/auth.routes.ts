@@ -2,21 +2,22 @@ import { Router } from 'express';
 import passport from '../../config/passport';
 import { googleCallback, me, sendVerificationCode, verifyRegistration, resendCode, login, refresh, logout, forgotPassword, resetPassword } from './auth.controller';
 import { authMiddleware } from '../../middleware/auth.middleware';
+import { authLimiter } from '../../middleware/rate-limit.middleware';
 
 const router = Router();
 
-router.post('/register/send-code', sendVerificationCode);
-router.post('/register/verify', verifyRegistration);
-router.post('/register/resend-code', resendCode);
+router.post('/register/send-code', authLimiter, sendVerificationCode);
+router.post('/register/verify', authLimiter, verifyRegistration);
+router.post('/register/resend-code', authLimiter, resendCode);
 
 // Client-facing aliases directly under /api/auth
-router.post('/send-code', sendVerificationCode);
-router.post('/verify', verifyRegistration);
+router.post('/send-code', authLimiter, sendVerificationCode);
+router.post('/verify', authLimiter, verifyRegistration);
 
-router.post('/forgot-password', forgotPassword);
-router.post('/reset-password', resetPassword);
+router.post('/forgot-password', authLimiter, forgotPassword);
+router.post('/reset-password', authLimiter, resetPassword);
 
-router.post('/login', login);
+router.post('/login', authLimiter, login);
 router.post('/refresh', refresh);
 router.post('/logout', logout);
 

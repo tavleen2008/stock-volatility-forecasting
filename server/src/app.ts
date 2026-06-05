@@ -14,6 +14,7 @@ import marketRouter from './modules/market/market.routes';
 import dashboardRouter from './modules/dashboard/dashboard.routes';
 import errorMiddleware from './middleware/error.middleware';
 import requestLogger from './middleware/request-logger.middleware';
+import { globalLimiter } from './middleware/rate-limit.middleware';
 import config from './config/env';
 
 const app = express();
@@ -28,6 +29,9 @@ app.use(cookieParser());
 app.use(passport.initialize());
 
 app.use(requestLogger);
+
+// Apply global rate limiting to all requests
+app.use(globalLimiter);
 
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);

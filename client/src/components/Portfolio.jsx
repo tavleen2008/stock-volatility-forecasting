@@ -13,7 +13,7 @@ const INITIAL_HOLDINGS = [
   { id: 4, symbol: 'TSLA', name: 'Tesla Inc.',       shares: 25,  buyPrice: 180.00 },
 ];
 
-const COLORS = ['#22c55e', '#10b981', '#f59e0b', '#ef4444'];
+const COLORS = ['#006d35', '#00b050', '#81c784', '#00401c'];
 
 function Portfolio({ isDarkMode = false }) {
   const [liveQuotes, setLiveQuotes]       = useState({});
@@ -128,7 +128,7 @@ function Portfolio({ isDarkMode = false }) {
                 labelStyle={{ color: '#0f172a', fontWeight: 600 }}
                 formatter={(v) => [`$${Number(v).toFixed(2)}`, 'Value']}
               />
-              <Line type="monotone" dataKey="value" stroke="#10b981" strokeWidth={2.5} dot={false} />
+              <Line type="monotone" dataKey="value" stroke="#006d35" strokeWidth={2.5} dot={false} />
             </LineChart>
           </ResponsiveContainer>
         </div>

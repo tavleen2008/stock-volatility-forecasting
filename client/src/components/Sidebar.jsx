@@ -16,7 +16,7 @@ function Sidebar({ isOpen, isDarkMode }) {
     {
       title: 'Main',
       items: [
-        { label: 'Home now', href: '/home', icon: <Home size={18} /> },
+        { label: 'Dashboard', href: '/dashboard', icon: <Home size={18} /> },
       ],
     },
     {

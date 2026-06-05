@@ -229,8 +229,8 @@ function Forecasts({ isDarkMode = false }) {
               <AreaChart data={forecast.chartData}>
                 <defs>
                   <linearGradient id="fcGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#10b981" stopOpacity={0.18} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                    <stop offset="5%"  stopColor="#006d35" stopOpacity={0.18} />
+                    <stop offset="95%" stopColor="#006d35" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -243,7 +243,7 @@ function Forecasts({ isDarkMode = false }) {
                 />
                 <ReferenceLine y={forecast.sma20} stroke="#f59e0b" strokeDasharray="4 2" label={{ value: 'SMA20', fill: '#f59e0b', fontSize: 10 }} />
                 <ReferenceLine y={forecast.sma50} stroke="#64748b" strokeDasharray="4 2" label={{ value: 'SMA50', fill: '#64748b', fontSize: 10 }} />
-                <Area type="monotone" dataKey="price" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#fcGrad)" dot={false} />
+                <Area type="monotone" dataKey="price" stroke="#006d35" strokeWidth={2} fillOpacity={1} fill="url(#fcGrad)" dot={false} />
               </AreaChart>
             </ResponsiveContainer>
             <div className="flex gap-6 mt-3 text-xs text-gray-500">

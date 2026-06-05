@@ -3,7 +3,7 @@ import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import MainContent from '../components/MainContent';
 function DashboardPage() {
-  const [isDarkMode, setIsDarkMode] = React.useState(true);
+  const [isDarkMode, setIsDarkMode] = React.useState(false);
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
 
   const toggleTheme = () => {

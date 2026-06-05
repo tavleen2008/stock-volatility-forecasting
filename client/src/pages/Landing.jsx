@@ -1,73 +1,70 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-/* ─── Scrolling Ticker ───────────────────────────────────────────── */
+/* ─── Ticker data ───────────────────────────────────────────── */
 const TICKERS = [
-  { sym: 'SPY', label: '88th Percentile', up: true },
-  { sym: 'VIX', label: '+12.4%', up: true },
-  { sym: 'QQQ', label: 'Implied Vol 22.1', up: false },
-  { sym: 'BTC', label: '30D Skew -1.2', up: true },
-  { sym: 'HYG', label: 'Spread 312bps', neutral: true },
   { sym: 'AAPL', label: '+2.94%', up: true },
   { sym: 'NVDA', label: '+5.21%', up: true },
   { sym: 'MSFT', label: '-0.56%', up: false },
   { sym: 'TSLA', label: '+1.83%', up: true },
+  { sym: 'VIX',  label: '+12.4%', up: true },
+  { sym: 'SPY',  label: '88th Percentile', up: null },
+  { sym: 'QQQ',  label: 'Implied Vol 22.1', up: null },
+  { sym: 'BTC',  label: '30D Skew -1.2', up: true },
+  { sym: 'HYG',  label: 'Spread 312bps', up: null },
 ];
 
+/* ─── Scroll animation hook ─────────────────────────────────── */
+function useScrollReveal() {
+  useEffect(() => {
+    const obs = new IntersectionObserver(
+      (entries) => entries.forEach((e) => {
+        if (e.isIntersecting) {
+          e.target.classList.add('sv-visible');
+          obs.unobserve(e.target);
+        }
+      }),
+      { threshold: 0.12 }
+    );
+    document.querySelectorAll('.sv-reveal').forEach((el) => obs.observe(el));
+    return () => obs.disconnect();
+  }, []);
+}
+
+/* ─── Ticker Bar ────────────────────────────────────────────── */
 function TickerBar() {
-  const items = [...TICKERS, ...TICKERS];
+  const items = [...TICKERS, ...TICKERS, ...TICKERS];
   return (
-    <div
-      className="ticker-wrap"
-      style={{
-        overflow: 'hidden',
-        background: 'rgba(14,14,14,0.95)',
-        borderBottom: '1px solid rgba(53,53,52,0.5)',
+    <div style={{
+      overflow: 'hidden',
+      background: '#f3f3f4',
+      borderBottom: '1px solid #d6e8d7',
+      display: 'flex',
+      alignItems: 'center',
+      height: '40px',
+      width: '100%',
+    }}>
+      <div style={{
         display: 'flex',
-        alignItems: 'center',
-        height: '40px',
-        width: '100%',
-      }}
-    >
-      <div
-        className="ticker-inner"
-        style={{
-          display: 'flex',
-          animation: 'tickerScroll 30s linear infinite',
-          whiteSpace: 'nowrap',
-        }}
-      >
+        animation: 'sv-ticker 40s linear infinite',
+        whiteSpace: 'nowrap',
+      }}>
         {items.map((t, i) => (
-          <span
-            key={i}
-            style={{
-              padding: '0 2rem',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              fontSize: '12px',
-              fontFamily: 'monospace',
-              letterSpacing: '-0.01em',
-              color: '#c8c6c5',
-            }}
-          >
-            <span style={{ color: '#535352' }}>/</span>
-            <span style={{ fontWeight: 600 }}>{t.sym}</span>
-            <span
-              style={{
-                color: t.neutral ? '#8e9379' : t.up ? '#c3f400' : '#ffb4ab',
-              }}
-            >
-              {t.label}
-            </span>
-            <span
-              style={{
-                color: t.neutral ? '#8e9379' : t.up ? '#c3f400' : '#ffb4ab',
-                fontSize: '11px',
-              }}
-            >
-              {t.neutral ? '—' : t.up ? '↑' : '↓'}
-            </span>
+          <span key={i} style={{
+            padding: '0 1.5rem',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: '11px',
+            fontFamily: '"JetBrains Mono", monospace',
+            fontWeight: 700,
+            letterSpacing: '0.05em',
+            textTransform: 'uppercase',
+          }}>
+            <span style={{ color: '#3b4a3d' }}>{t.sym}</span>
+            <span style={{
+              color: t.up === null ? '#505f76' : t.up ? '#006d35' : '#ba1a1a',
+            }}>{t.label} {t.up === true ? '↑' : t.up === false ? '↓' : ''}</span>
           </span>
         ))}
       </div>
@@ -75,934 +72,712 @@ function TickerBar() {
   );
 }
 
-/* ─── Glassmorphism Feature Card ─────────────────────────────────── */
-function GlassCard({ icon, title, desc }) {
-  return (
-    <div
-      style={{
-        background: '#111827',
-        border: '1px solid #1f2937',
-        borderRadius: '14px',
-        padding: '28px',
-        transition: 'all .25s ease',
-        height: '100%'
-      }}
-      onMouseEnter={(e) => {
-        e.currentTarget.style.borderColor = '#334155';
-        e.currentTarget.style.transform = 'translateY(-3px)';
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.borderColor = '#1f2937';
-        e.currentTarget.style.transform = 'translateY(0)';
-      }}
-    >
-      <div
-        style={{
-          width: 48,
-          height: 48,
-          borderRadius: 10,
-          background: '#0f172a',
-          border: '1px solid #1e293b',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          marginBottom: 20,
-          fontSize: 22
-        }}
-      >
-        {icon}
-      </div>
-
-      <h3
-        style={{
-          color: '#fff',
-          fontSize: 18,
-          fontWeight: 600,
-          marginBottom: 10
-        }}
-      >
-        {title}
-      </h3>
-
-      <p
-        style={{
-          color: '#94a3b8',
-          lineHeight: 1.7,
-          fontSize: 14
-        }}
-      >
-        {desc}
-      </p>
-    </div>
-  );
-}
-
-/* ─── Step Item ──────────────────────────────────────────────────── */
-function StepItem({ num, title, desc, isLast }) {
-  return (
-    <div style={{ display: 'flex', gap: 16, marginBottom: isLast ? 0 : 0 }}>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-        <div
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: '50%',
-            background: 'rgba(195,244,0,0.1)',
-            border: '1px solid rgba(195,244,0,0.3)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 12,
-            fontWeight: 700,
-            color: '#c3f400',
-            flexShrink: 0,
-            fontFamily: 'monospace',
-          }}
-        >
-          {num}
-        </div>
-        {!isLast && (
-          <div
-            style={{
-              flex: 1,
-              width: 1,
-              background: 'linear-gradient(to bottom, rgba(195,244,0,0.2), transparent)',
-              minHeight: 32,
-              marginTop: 8,
-            }}
-          />
-        )}
-      </div>
-      <div style={{ paddingBottom: isLast ? 0 : 32 }}>
-        <h4
-          style={{
-            fontSize: 15,
-            fontWeight: 600,
-            color: '#e5e2e1',
-            marginBottom: 6,
-            letterSpacing: '-0.01em',
-          }}
-        >
-          {title}
-        </h4>
-        <p style={{ fontSize: 13, color: '#8e9379', lineHeight: 1.6 }}>{desc}</p>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Navbar ─────────────────────────────────────────────────────── */
-function LandingNav({ onLogin, onSignup }) {
+/* ─── Navbar ────────────────────────────────────────────────── */
+function Navbar({ onLogin, onSignup, activeSection }) {
   const [scrolled, setScrolled] = useState(false);
-
   useEffect(() => {
-    const handleScroll = () => {
-      setScrolled(window.scrollY > 20);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const fn = () => setScrolled(window.scrollY > 10);
+    window.addEventListener('scroll', fn);
+    return () => window.removeEventListener('scroll', fn);
   }, []);
 
-  return (
-    <nav
-      style={{
-        position: 'fixed',
-        top: 40,
-        left: 0,
-        right: 0,
-        zIndex: 100,
-        background: scrolled
-          ? 'rgba(11,15,20,0.95)'
-          : 'rgba(11,15,20,0.75)',
-        backdropFilter: 'blur(12px)',
-        borderBottom: scrolled
-          ? '1px solid rgba(255,255,255,0.06)'
-          : '1px solid transparent',
-        transition: 'all .25s ease'
-      }}
-    >
-      <div
-        style={{
-          maxWidth: 1400,
-          margin: '0 auto',
-          height: 72,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 32px'
-        }}
-      >
-        {/* Logo */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10
-          }}
-        >
-          <div
-            style={{
-              width: 34,
-              height: 34,
-              borderRadius: 8,
-              background: '#22c55e',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#000',
-              fontWeight: 800
-            }}
-          >
-            S
-          </div>
+  const links = [
+    { label: 'Features', id: 'features' },
+    { label: 'How it Works', id: 'how-it-works' },
+    { label: 'For Investors', id: 'for-investors' },
+  ];
 
-          <span
-            style={{
-              color: '#fff',
-              fontWeight: 700,
-              fontSize: 16
-            }}
-          >
-            Sentivvo
-          </span>
+  return (
+    <header style={{
+      position: 'sticky',
+      top: 0,
+      zIndex: 50,
+      background: scrolled ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.75)',
+      backdropFilter: 'blur(14px)',
+      borderBottom: scrolled ? '1px solid rgba(0,109,53,0.12)' : '1px solid rgba(0,0,0,0.05)',
+      transition: 'all 0.3s ease',
+      boxShadow: scrolled ? '0 2px 20px rgba(0,109,53,0.06)' : 'none',
+    }}>
+      <nav style={{
+        maxWidth: 1280,
+        margin: '0 auto',
+        padding: '0 32px',
+        height: 72,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+      }}>
+        {/* Logo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 36, height: 36, borderRadius: 8,
+            background: '#006d35',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 0 15px rgba(0,109,53,0.3)',
+          }}>
+            <span style={{ color: '#fff', fontWeight: 800, fontSize: 18 }}>S</span>
+          </div>
+          <span style={{ fontWeight: 700, fontSize: 18, color: '#1a1c1c', letterSpacing: '-0.02em', fontFamily: '"Hanken Grotesk", sans-serif' }}>Sentivvo</span>
         </div>
 
-        {/* Links */}
-        <div
-          style={{
-            display: 'flex',
-            gap: 32,
-            color: '#94a3b8',
-            fontSize: 14
-          }}
-        >
-          <a href="#features" style={{ color: 'inherit', textDecoration: 'none' }}>
-            Features
-          </a>
-
-          <a href="#how-it-works" style={{ color: 'inherit', textDecoration: 'none' }}>
-            How it Works
-          </a>
-
-          <a href="#for-you" style={{ color: 'inherit', textDecoration: 'none' }}>
-            For Investors
-          </a>
+        {/* Nav links */}
+        <div style={{ display: 'flex', gap: 36 }}>
+          {links.map(({ label, id }) => (
+            <a
+              key={id}
+              href={`#${id}`}
+              style={{
+                color: activeSection === id ? '#006d35' : '#3b4a3d',
+                textDecoration: 'none',
+                fontSize: 14,
+                fontWeight: activeSection === id ? 600 : 500,
+                fontFamily: '"Hanken Grotesk", sans-serif',
+                position: 'relative',
+                paddingBottom: 4,
+                transition: 'color 0.2s ease',
+              }}
+              onMouseEnter={e => e.currentTarget.style.color = '#006d35'}
+              onMouseLeave={e => e.currentTarget.style.color = activeSection === id ? '#006d35' : '#3b4a3d'}
+            >
+              {label}
+              {activeSection === id && (
+                <span style={{
+                  position: 'absolute', bottom: 0, left: 0, right: 0,
+                  height: 2, background: '#006d35', borderRadius: 1,
+                }} />
+              )}
+            </a>
+          ))}
         </div>
 
         {/* CTA */}
-        <div
-          style={{
-            display: 'flex',
-            gap: 12
-          }}
-        >
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <button
             onClick={onLogin}
             style={{
-              background: 'transparent',
-              color: '#fff',
-              border: '1px solid #334155',
-              padding: '10px 18px',
-              borderRadius: 8,
-              cursor: 'pointer'
+              background: 'transparent', color: '#1a1c1c',
+              border: '1px solid #bacbb9', padding: '9px 20px',
+              borderRadius: 8, cursor: 'pointer', fontSize: 14,
+              fontWeight: 600, fontFamily: '"Hanken Grotesk", sans-serif',
+              transition: 'all 0.2s ease',
             }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#f3f3f4'; e.currentTarget.style.borderColor = '#006d35'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#bacbb9'; }}
           >
             Login
           </button>
-
           <button
             onClick={onSignup}
             style={{
-              background: '#22c55e',
-              color: '#000',
-              border: 'none',
-              padding: '10px 18px',
-              borderRadius: 8,
-              fontWeight: 700,
-              cursor: 'pointer'
+              background: 'linear-gradient(135deg, #006d35, #00e676)',
+              color: '#fff',
+              border: 'none', padding: '10px 22px',
+              borderRadius: 8, cursor: 'pointer', fontSize: 14,
+              fontWeight: 700, fontFamily: '"Hanken Grotesk", sans-serif',
+              boxShadow: '0 4px 16px rgba(0,109,53,0.35)',
+              transition: 'all 0.3s ease',
+              letterSpacing: '0.01em',
             }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,109,53,0.45)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,109,53,0.35)'; }}
           >
             Get Started
           </button>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </header>
   );
 }
 
-/* ─── Main Landing Page ──────────────────────────────────────────── */
-export default function Landing() {
-  const navigate = useNavigate();
+/* ─── Section: Hero ─────────────────────────────────────────── */
+function HeroSection({ onSignup, onLogin }) {
+  return (
+    <section style={{
+      minHeight: 'calc(100vh - 112px)',
+      display: 'grid',
+      gridTemplateColumns: '1.1fr 1fr',
+      gap: 80,
+      alignItems: 'center',
+      maxWidth: 1280,
+      margin: '0 auto',
+      padding: '80px 32px 80px',
+      position: 'relative',
+    }}>
+      {/* Decorative blobs */}
+      <div style={{
+        position: 'absolute', top: 0, right: 0,
+        width: '40%', height: '60%',
+        background: 'radial-gradient(circle at top right, rgba(0,109,53,0.06), transparent 70%)',
+        pointerEvents: 'none',
+      }} />
+      <div style={{
+        position: 'absolute', bottom: 0, left: 0,
+        width: '30%', height: '40%',
+        background: 'radial-gradient(circle at bottom left, rgba(0,230,118,0.04), transparent 70%)',
+        pointerEvents: 'none',
+      }} />
 
-  const features = [
-    {
-      icon: '📊',
-      title: 'Predictive Analytics',
-      desc: 'Forecast volatility using statistical models trained on historical OHLCV data with annualised vol, RSI, and momentum signals.',
-    },
-    {
-      icon: '📰',
-      title: 'Sentiment Intelligence',
-      desc: 'Real-time financial news — track market narratives and sentiment shifts that precede price movements.',
-    },
-    {
-      icon: '⚡',
-      title: 'Unified Dashboard',
-      desc: 'All your volatility forecasts, portfolio holdings, live prices, and risk signals in one premium dark-mode interface.',
-    },
-    {
-      icon: '🛡',
-      title: 'Secure by Design',
-      desc: 'JWT + refresh token auth, Google OAuth, email OTP verification. Your data stays yours.',
-    },
-    {
-      icon: '📡',
-      title: 'Live Market Data',
-      desc: 'Live quotes, 52-week ranges, OHLCV history with 1D / 1M / 1Y timeframe selector.',
-    },
-    {
-      icon: '💼',
-      title: 'Portfolio Tracker',
-      desc: 'Track your holdings with live P&L, today\'s % change, distribution pie chart, and 30-day performance curve.',
-    },
-  ];
+      {/* Left */}
+      <div className="sv-reveal" style={{ zIndex: 1 }}>
+        <div style={{
+          fontSize: 11, fontWeight: 800, letterSpacing: '0.15em',
+          textTransform: 'uppercase', color: '#006d35',
+          marginBottom: 24, fontFamily: '"Hanken Grotesk", sans-serif',
+        }}>
+          Market Intelligence Platform
+        </div>
+        <h1 style={{
+          fontSize: 'clamp(48px, 5vw, 72px)',
+          lineHeight: 1.08,
+          fontWeight: 800,
+          color: '#1a1c1c',
+          letterSpacing: '-0.04em',
+          marginBottom: 28,
+          fontFamily: '"Hanken Grotesk", sans-serif',
+        }}>
+          Predict Volatility.<br />
+          <span style={{ color: '#006d35' }}>Trade Smarter.</span>
+        </h1>
+        <p style={{
+          color: '#3b4a3d',
+          fontSize: 18,
+          lineHeight: 1.8,
+          maxWidth: 560,
+          marginBottom: 44,
+          fontFamily: '"Hanken Grotesk", sans-serif',
+        }}>
+          Sentivvo combines real-time market data, volatility forecasting models and financial news sentiment analysis to help investors understand risk before it happens.
+        </p>
 
+        {/* Stats row */}
+        <div style={{ display: 'flex', gap: 40, marginBottom: 44 }}>
+          {[
+            { val: '4', label: 'Live Symbols' },
+            { val: '3mo', label: 'Deep History' },
+            { val: 'RSI+Vol', label: 'Vol Engine' },
+          ].map(({ val, label }) => (
+            <div key={label}>
+              <div style={{ fontSize: 22, fontWeight: 800, color: '#006d35', fontFamily: '"JetBrains Mono", monospace' }}>{val}</div>
+              <div style={{ fontSize: 11, color: '#6b7b6c', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: '"Hanken Grotesk", sans-serif' }}>{label}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', gap: 16 }}>
+          <button
+            onClick={onSignup}
+            style={{
+              background: '#006d35',
+              color: '#fff',
+              border: 'none', padding: '14px 32px',
+              borderRadius: 10, cursor: 'pointer',
+              fontSize: 16, fontWeight: 700,
+              fontFamily: '"Hanken Grotesk", sans-serif',
+              boxShadow: '0 6px 20px rgba(0,109,53,0.35)',
+              transition: 'all 0.3s ease',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 10px 28px rgba(0,109,53,0.4)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,109,53,0.35)'; }}
+          >
+            Start For Free
+          </button>
+          <button
+            onClick={onLogin}
+            style={{
+              background: 'transparent',
+              color: '#1a1c1c',
+              border: '1px solid #bacbb9', padding: '14px 32px',
+              borderRadius: 10, cursor: 'pointer',
+              fontSize: 16, fontWeight: 600,
+              fontFamily: '"Hanken Grotesk", sans-serif',
+              transition: 'all 0.2s ease',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#f3f3f4'; e.currentTarget.style.borderColor = '#006d35'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.borderColor = '#bacbb9'; }}
+          >
+            Request Demo
+          </button>
+        </div>
+      </div>
+
+      {/* Right: Live sample widget */}
+      <div className="sv-reveal" style={{ zIndex: 1 }}>
+        <div style={{
+          background: '#fff',
+          border: '1px solid #e2e2e2',
+          borderRadius: 16,
+          overflow: 'hidden',
+          boxShadow: '0 20px 60px -15px rgba(0,109,53,0.15), 0 4px 20px rgba(0,0,0,0.06)',
+        }}>
+          {/* Widget header */}
+          <div style={{
+            padding: '16px 24px',
+            borderBottom: '1px solid #e2e2e2',
+            background: '#f9f9f9',
+            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6b7b6c', fontFamily: '"Hanken Grotesk", sans-serif' }}>LIVE SAMPLE</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #e2e2e2', borderRadius: 6, padding: '3px 10px' }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#006d35', animation: 'sv-pulse 2s infinite' }} />
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#1a1c1c', fontFamily: '"JetBrains Mono", monospace', letterSpacing: '0.05em' }}>AAPL</span>
+              </div>
+            </div>
+            <span style={{ fontSize: 20, color: '#6b7b6c' }}>⋮</span>
+          </div>
+
+          {/* Simulated price chart */}
+          <div style={{ position: 'relative', height: 180, background: '#fff', overflow: 'hidden' }}>
+            <div style={{
+              position: 'absolute', inset: 0, opacity: 0.3,
+              backgroundImage: 'radial-gradient(#bacbb9 1px, transparent 1px)',
+              backgroundSize: '20px 20px',
+            }} />
+            <svg width="100%" height="100%" viewBox="0 0 400 180" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="heroGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#006d35" stopOpacity="0.18" />
+                  <stop offset="100%" stopColor="#006d35" stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              <path d="M0,140 Q60,120 100,130 T180,90 T270,70 T360,40 T400,30" stroke="#006d35" strokeWidth="2.5" fill="none" />
+              <path d="M0,140 Q60,120 100,130 T180,90 T270,70 T360,40 T400,30 V180 H0 Z" fill="url(#heroGrad)" />
+            </svg>
+            <div style={{ position: 'absolute', top: 16, right: 20 }}>
+              <div style={{ fontSize: 22, fontWeight: 700, color: '#1a1c1c', fontFamily: '"JetBrains Mono", monospace' }}>$189.43</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: '#006d35', letterSpacing: '0.08em', fontFamily: '"Hanken Grotesk", sans-serif' }}>+1.24% today</div>
+            </div>
+          </div>
+
+          {/* Data table */}
+          <div style={{ padding: '16px 24px 20px' }}>
+            {[
+              { label: 'Historical Volatility (Ann.)', value: '28.4%', color: '#1a1c1c' },
+              { label: 'RSI (14-period)', value: '42.1', color: '#1a1c1c' },
+              { label: '5-Day Expected Range', value: '$178 — $195', color: '#1a1c1c' },
+              { label: 'Signal', value: '↑ Bullish', color: '#006d35' },
+            ].map(({ label, value, color }) => (
+              <div key={label} style={{
+                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                padding: '10px 0',
+                borderBottom: '1px solid rgba(186,203,185,0.4)',
+              }}>
+                <span style={{ fontSize: 13, color: '#3b4a3d', fontFamily: '"Hanken Grotesk", sans-serif' }}>{label}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color, fontFamily: '"JetBrains Mono", monospace', letterSpacing: '-0.01em' }}>{value}</span>
+              </div>
+            ))}
+            <button
+              onClick={onSignup}
+              style={{
+                width: '100%', marginTop: 16,
+                padding: '11px 0',
+                background: '#f3f3f4', border: '1px solid #e2e2e2',
+                borderRadius: 8, cursor: 'pointer',
+                fontSize: 11, fontWeight: 800,
+                letterSpacing: '0.12em', textTransform: 'uppercase',
+                color: '#1a1c1c', fontFamily: '"Hanken Grotesk", sans-serif',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = '#006d35'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = '#006d35'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = '#f3f3f4'; e.currentTarget.style.color = '#1a1c1c'; e.currentTarget.style.borderColor = '#e2e2e2'; }}
+            >
+              Expand Analysis →
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Section: How It Works ─────────────────────────────────── */
+function HowItWorksSection() {
   const steps = [
-    { num: '01', title: 'Connect Market Data', desc: 'Live OHLCV feeds power every chart — no API key, no delays.' },
-    { num: '02', title: 'Run Volatility Engine', desc: 'Annualised historical vol, RSI, SMA-20/50, and trend computed on 3-month price history.' },
-    { num: '03', title: 'Read the Signal', desc: 'Bullish / Bearish / Neutral signal badge with expected price range (±1 SD, 5 & 30 day).' },
-    { num: '04', title: 'Make Decisions', desc: 'Navigate your portfolio, read breaking news, and act — all from one premium interface.' },
+    { num: '01', icon: '⬡', title: 'Connect Market Data', desc: 'Seamlessly ingest raw feeds from global exchanges and sentiment pools.' },
+    { num: '02', icon: '⬡', title: 'Run Volatility Engine', desc: 'Execute sophisticated GARCH and Monte Carlo simulations in real-time.' },
+    { num: '03', icon: '⬡', title: 'Read the Signal', desc: 'Receive high-conviction alerts translated into clear directional bias.' },
+    { num: '04', icon: '⬡', title: 'Make Decisions', desc: 'Allocate capital with institutional-grade confidence and risk control.' },
   ];
+  return (
+    <section id="how-it-works" style={{
+      padding: '96px 32px',
+      background: '#f3f3f4',
+      borderTop: '1px solid #e2e2e2',
+      borderBottom: '1px solid #e2e2e2',
+    }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+        <div className="sv-reveal" style={{ textAlign: 'center', marginBottom: 72 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#006d35', marginBottom: 16, fontFamily: '"Hanken Grotesk", sans-serif' }}>How It Works</div>
+          <h2 style={{ fontSize: 'clamp(28px, 3vw, 42px)', fontWeight: 700, color: '#1a1c1c', letterSpacing: '-0.03em', marginBottom: 16, fontFamily: '"Hanken Grotesk", sans-serif' }}>The Intelligence Pipeline</h2>
+          <p style={{ color: '#3b4a3d', fontSize: 16, maxWidth: 560, margin: '0 auto', fontFamily: '"Hanken Grotesk", sans-serif' }}>
+            Our proprietary engine processes billions of data points to deliver actionable signals in milliseconds.
+          </p>
+        </div>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+          gap: 32,
+          position: 'relative',
+        }}>
+          {steps.map((step, i) => (
+            <div key={step.num} className="sv-reveal" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+              <div
+                style={{
+                  width: 64, height: 64,
+                  background: i === 3 ? '#006d35' : '#fff',
+                  border: `1px solid ${i === 3 ? '#006d35' : '#e2e2e2'}`,
+                  borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  marginBottom: 24,
+                  boxShadow: i === 3 ? '0 4px 16px rgba(0,109,53,0.3)' : '0 2px 8px rgba(0,0,0,0.06)',
+                  transition: 'all 0.3s ease',
+                }}
+              >
+                <span style={{ fontSize: 22, color: i === 3 ? '#fff' : '#006d35' }}>
+                  {['⬡', '◈', '◎', '◆'][i]}
+                </span>
+              </div>
+              <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#006d35', marginBottom: 10, fontFamily: '"Hanken Grotesk", sans-serif' }}>Step {step.num}</div>
+              <h3 style={{ fontSize: 20, fontWeight: 600, color: '#1a1c1c', marginBottom: 12, fontFamily: '"Hanken Grotesk", sans-serif' }}>{step.title}</h3>
+              <p style={{ fontSize: 14, color: '#3b4a3d', lineHeight: 1.7, fontFamily: '"Hanken Grotesk", sans-serif' }}>{step.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 
+/* ─── Section: Features ─────────────────────────────────────── */
+function FeaturesSection() {
+  const features = [
+    { icon: '◈', title: 'Predictive Analytics', desc: 'Forecast volatility using statistical models trained on historical OHLCV data with annualised vol, RSI, and momentum signals.' },
+    { icon: '◉', title: 'Sentiment Intelligence', desc: 'Real-time financial news — track market narratives and sentiment shifts that precede price movements with high precision.' },
+    { icon: '▣', title: 'Unified Dashboard', desc: 'All your volatility forecasts, portfolio holdings, live prices, and risk signals in one premium light-mode interface.' },
+    { icon: '◆', title: 'Secure by Design', desc: 'JWT + refresh token auth, Google OAuth, email OTP verification. Your data stays yours with institutional encryption standards.' },
+    { icon: '◎', title: 'Live Market Data', desc: 'Live quotes, 52-week ranges, OHLCV history with 1D / 1M / 1Y timeframe selector for comprehensive asset analysis.' },
+    { icon: '◱', title: 'Portfolio Tracker', desc: 'Track your holdings with live P&L, today\'s % change, distribution pie chart, and 30-day performance curve.' },
+  ];
+  return (
+    <section id="features" style={{
+      padding: '96px 32px',
+      background: '#fff',
+    }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+        <div className="sv-reveal" style={{ textAlign: 'center', marginBottom: 72 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#006d35', marginBottom: 16, fontFamily: '"Hanken Grotesk", sans-serif' }}>Platform Features</div>
+          <h2 style={{ fontSize: 'clamp(28px, 3vw, 56px)', fontWeight: 700, color: '#1a1c1c', letterSpacing: '-0.03em', marginBottom: 16, fontFamily: '"Hanken Grotesk", sans-serif' }}>
+            Everything You Need to <span style={{ color: '#006d35' }}>Trade Smarter</span>
+          </h2>
+          <p style={{ color: '#3b4a3d', fontSize: 16, maxWidth: 600, margin: '0 auto', fontFamily: '"Hanken Grotesk", sans-serif', opacity: 0.8 }}>
+            Institutional-grade analytics and sentiment intelligence tailored for the modern data-driven investor.
+          </p>
+        </div>
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: 24,
+        }}>
+          {features.map((f, i) => (
+            <div
+              key={f.title}
+              className="sv-reveal sv-feature-card"
+              style={{
+                background: '#fff',
+                border: '1px solid #e2e2e2',
+                borderRadius: 14,
+                padding: '32px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 16,
+                cursor: 'default',
+                transition: 'all 0.3s cubic-bezier(0.4,0,0.2,1)',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.borderColor = '#006d35';
+                e.currentTarget.style.transform = 'translateY(-4px)';
+                e.currentTarget.style.boxShadow = '0 10px 30px -10px rgba(0,109,53,0.12)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.borderColor = '#e2e2e2';
+                e.currentTarget.style.transform = 'translateY(0)';
+                e.currentTarget.style.boxShadow = 'none';
+              }}
+            >
+              <div style={{
+                width: 48, height: 48,
+                background: '#f3f3f4',
+                borderRadius: 10,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 22,
+                color: '#006d35',
+              }}>{f.icon}</div>
+              <div>
+                <h3 style={{ fontSize: 20, fontWeight: 600, color: '#1a1c1c', marginBottom: 10, fontFamily: '"Hanken Grotesk", sans-serif' }}>{f.title}</h3>
+                <p style={{ fontSize: 14, color: '#3b4a3d', lineHeight: 1.7, fontFamily: '"Hanken Grotesk", sans-serif' }}>{f.desc}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Section: For Investors ────────────────────────────────── */
+function ForInvestorsSection({ onSignup }) {
   const personas = [
-    { name: 'Retail Investors', desc: 'Manage personal portfolios with institutional-grade volatility risk insights.' },
-    { name: 'Active Traders', desc: 'Exploit market fluctuations and optimise entry/exit points before movements.' },
-    { name: 'Finance Students', desc: 'Learn structural market risks and study volatility models visually with real data.' },
-    { name: 'Researchers', desc: 'Analyse historical vol correlations across multiple timeframes and symbols.' },
-  ];
-
-  const stats = [
-    { val: '4', label: 'Live Symbols' },
-    { val: '3mo', label: 'Deep History' },
-    { val: 'Real-Time', label: 'Market Feed' },
-    { val: 'RSI+Vol', label: 'Vol Engine' },
+    {
+      icon: '◉',
+      title: 'Retail Investors',
+      desc: 'Democratizing professional-grade volatility tools to level the playing field against institutional giants.',
+      tags: ['Risk Analysis', 'Portfolio Health'],
+      span: 8,
+    },
+    {
+      icon: '◈',
+      title: 'Active Traders',
+      desc: 'Low-latency volatility signals for day traders and scalpers seeking the edge in rapid price discovery phases.',
+      span: 4,
+    },
+    {
+      icon: '◆',
+      title: 'Finance Students',
+      desc: 'Bridge the gap between academic theory and live market execution with our sandbox environments.',
+      span: 4,
+    },
+    {
+      icon: '◎',
+      title: 'Researchers',
+      desc: 'Deep-dive into historical datasets and alternative data pools with our comprehensive API and export tools.',
+      tags: ['Historical Replay', 'API Access'],
+      span: 8,
+    },
   ];
 
   return (
-    <div
-      style={{
-        background: '#131313',
-        color: '#e5e2e1',
-        fontFamily: 'Inter, system-ui, sans-serif',
-        minHeight: '100vh',
-        overflowX: 'hidden',
-      }}
-    >
-      {/* CSS animations injected via style tag */}
+    <section id="for-investors" style={{
+      padding: '96px 32px',
+      background: '#f9f9f9',
+      borderTop: '1px solid #e2e2e2',
+    }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+        <div className="sv-reveal" style={{ marginBottom: 64 }}>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: '#006d35', marginBottom: 16, fontFamily: '"Hanken Grotesk", sans-serif' }}>For Investors</div>
+          <h2 style={{ fontSize: 'clamp(28px, 3vw, 42px)', fontWeight: 700, color: '#1a1c1c', letterSpacing: '-0.03em', marginBottom: 12, fontFamily: '"Hanken Grotesk", sans-serif' }}>Who Sentivvo is Built For</h2>
+          <p style={{ fontSize: 16, color: '#3b4a3d', fontFamily: '"Hanken Grotesk", sans-serif' }}>Precision tools for every tier of the financial ecosystem.</p>
+        </div>
+
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(12, 1fr)',
+          gridTemplateRows: 'auto auto',
+          gap: 24,
+        }}>
+          {personas.map((p, i) => (
+            <div
+              key={p.title}
+              className="sv-reveal"
+              style={{
+                gridColumn: `span ${p.span || 4}`,
+                background: '#fff',
+                border: '1px solid #e2e2e2',
+                borderRadius: 14,
+                padding: '32px',
+                display: 'flex', flexDirection: 'column',
+                transition: 'all 0.3s ease',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#006d35'; e.currentTarget.style.boxShadow = '0 8px 30px -10px rgba(0,109,53,0.12)'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e2e2'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              <div style={{
+                width: 48, height: 48, background: '#f3f3f4',
+                borderRadius: 10, display: 'flex', alignItems: 'center',
+                justifyContent: 'center', fontSize: 22, color: '#006d35',
+                marginBottom: 24,
+              }}>{p.icon}</div>
+              <h3 style={{ fontSize: p.span === 8 ? 28 : 20, fontWeight: 600, color: '#1a1c1c', marginBottom: 12, fontFamily: '"Hanken Grotesk", sans-serif' }}>{p.title}</h3>
+              <p style={{ fontSize: p.span === 8 ? 16 : 14, color: '#3b4a3d', lineHeight: 1.7, fontFamily: '"Hanken Grotesk", sans-serif', flex: 1 }}>{p.desc}</p>
+              {p.tags && (
+                <div style={{ display: 'flex', gap: 10, marginTop: 24 }}>
+                  {p.tags.map(t => (
+                    <span key={t} style={{
+                      padding: '4px 12px', background: '#f3f3f4',
+                      borderRadius: 6, fontSize: 11, fontWeight: 700,
+                      letterSpacing: '0.06em', textTransform: 'uppercase',
+                      color: '#3b4a3d', fontFamily: '"Hanken Grotesk", sans-serif',
+                    }}>{t}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <div className="sv-reveal" style={{ textAlign: 'center', marginTop: 80 }}>
+          <div style={{
+            background: '#006d35',
+            borderRadius: 20,
+            padding: '64px 48px',
+            position: 'relative',
+            overflow: 'hidden',
+          }}>
+            <div style={{
+              position: 'absolute', top: 0, right: 0,
+              width: '50%', height: '100%',
+              background: 'radial-gradient(circle at 80% 50%, rgba(0,230,118,0.15), transparent 70%)',
+              pointerEvents: 'none',
+            }} />
+            <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.15em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.6)', marginBottom: 20, fontFamily: '"Hanken Grotesk", sans-serif' }}>Ready to Start?</div>
+            <h2 style={{ fontSize: 'clamp(24px, 3vw, 40px)', fontWeight: 700, color: '#fff', letterSpacing: '-0.02em', marginBottom: 16, fontFamily: '"Hanken Grotesk", sans-serif' }}>
+              Your edge starts here. Free. Forever.
+            </h2>
+            <p style={{ color: 'rgba(255,255,255,0.75)', fontSize: 16, maxWidth: 480, margin: '0 auto 36px', fontFamily: '"Hanken Grotesk", sans-serif', lineHeight: 1.7 }}>
+              Create a free account to unlock live volatility forecasts, portfolio tracking, and financial news — all in one dashboard.
+            </p>
+            <button
+              onClick={onSignup}
+              style={{
+                background: '#fff',
+                color: '#006d35',
+                border: 'none', padding: '14px 36px',
+                borderRadius: 10, cursor: 'pointer',
+                fontSize: 16, fontWeight: 800,
+                fontFamily: '"Hanken Grotesk", sans-serif',
+                boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.2)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)'; e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.15)'; }}
+            >
+              Get Started — It's Free
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Footer ────────────────────────────────────────────────── */
+function Footer() {
+  return (
+    <footer style={{
+      background: '#fff',
+      borderTop: '1px solid #e2e2e2',
+      padding: '32px',
+    }}>
+      <div style={{
+        maxWidth: 1280, margin: '0 auto',
+        display: 'flex', flexWrap: 'wrap',
+        justifyContent: 'space-between', alignItems: 'center',
+        gap: 20,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: 6,
+            background: '#006d35',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <span style={{ color: '#fff', fontWeight: 800, fontSize: 14 }}>S</span>
+          </div>
+          <span style={{ fontWeight: 700, fontSize: 16, color: '#1a1c1c', fontFamily: '"Hanken Grotesk", sans-serif' }}>Sentivvo</span>
+        </div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 32 }}>
+          {['Privacy Policy', 'Terms of Service', 'Legal Disclaimer', 'Contact Us'].map(l => (
+            <a key={l} href="#" style={{ color: '#6b7b6c', textDecoration: 'none', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', fontFamily: '"Hanken Grotesk", sans-serif', transition: 'color 0.2s' }}
+              onMouseEnter={e => e.currentTarget.style.color = '#1a1c1c'}
+              onMouseLeave={e => e.currentTarget.style.color = '#6b7b6c'}
+            >{l}</a>
+          ))}
+        </div>
+        <p style={{ fontSize: 11, color: '#6b7b6c', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', fontFamily: '"Hanken Grotesk", sans-serif' }}>
+          © 2024 Sentivvo Market Intelligence. All rights reserved.
+        </p>
+      </div>
+    </footer>
+  );
+}
+
+/* ─── Main Export ───────────────────────────────────────────── */
+export default function Landing() {
+  const navigate = useNavigate();
+  const [activeSection, setActiveSection] = useState('');
+  useScrollReveal();
+
+  // Track active section on scroll
+  useEffect(() => {
+    const sections = ['features', 'how-it-works', 'for-investors'];
+    const obs = new IntersectionObserver(
+      (entries) => {
+        entries.forEach(e => {
+          if (e.isIntersecting) setActiveSection(e.target.id);
+        });
+      },
+      { rootMargin: '-40% 0px -40% 0px' }
+    );
+    sections.forEach(id => {
+      const el = document.getElementById(id);
+      if (el) obs.observe(el);
+    });
+    return () => obs.disconnect();
+  }, []);
+
+  return (
+    <div style={{
+      background: '#f9f9f9',
+      color: '#1a1c1c',
+      minHeight: '100vh',
+      overflowX: 'hidden',
+    }}>
       <style>{`
-        @keyframes tickerScroll {
-          0% { transform: translate3d(0, 0, 0); }
-          100% { transform: translate3d(-50%, 0, 0); }
+        @import url('https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap');
+
+        @keyframes sv-ticker {
+          0%   { transform: translate3d(0,0,0); }
+          100% { transform: translate3d(-33.333%,0,0); }
         }
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(24px); }
-          to { opacity: 1; transform: translateY(0); }
+        @keyframes sv-pulse {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50%       { opacity: 0.6; transform: scale(0.85); }
         }
-        @keyframes pulse-glow {
-          0%, 100% { opacity: 0.4; }
-          50% { opacity: 0.8; }
+        @keyframes sv-fadeup {
+          from { opacity: 0; transform: translateY(28px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
-        .glass-card {
-          background: rgba(26, 26, 26, 0.4);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          border: 1px solid rgba(53, 53, 52, 0.5);
-          border-radius: 12px;
-          padding: 28px;
-          transition: all 0.3s ease;
-          cursor: default;
-        }
-        .glass-card:hover {
-          border-color: rgba(195, 244, 0, 0.3);
-          background: rgba(26, 26, 26, 0.7);
-          transform: translateY(-3px);
-          box-shadow: 0 16px 40px -10px rgba(195, 244, 0, 0.06);
-        }
-        .persona-card {
-          background: rgba(26,26,26,0.3);
-          border: 1px solid rgba(53, 53, 52, 0.5);
-          border-radius: 12px;
-          padding: 28px;
-          transition: all 0.3s ease;
-        }
-        .persona-card:hover {
-          border-color: rgba(195,244,0,0.3);
-          background: rgba(26,26,26,0.6);
-        }
-        .fade-up {
+
+        .sv-reveal {
           opacity: 0;
-          transform: translateY(24px);
+          transform: translateY(28px);
           transition: opacity 0.7s ease, transform 0.7s ease;
         }
-        .fade-up.visible {
+        .sv-reveal.sv-visible {
           opacity: 1;
           transform: translateY(0);
         }
-        .label-caps {
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.12em;
-          text-transform: uppercase;
-          color: #abd600;
-        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        a { cursor: pointer; }
+        button { font-family: inherit; }
       `}</style>
 
-      {/* Ticker */}
       <TickerBar />
+      <Navbar
+        onLogin={() => navigate('/login')}
+        onSignup={() => navigate('/signup')}
+        activeSection={activeSection}
+      />
 
-      {/* Navbar */}
-      <LandingNav onLogin={() => navigate('/login')} onSignup={() => navigate('/signup')} />
+      <HeroSection
+        onSignup={() => navigate('/signup')}
+        onLogin={() => navigate('/login')}
+      />
 
-      {/* ── HERO ── */}
-      <section
-  style={{
-    minHeight: '100vh',
-    display: 'grid',
-    gridTemplateColumns: '1.1fr 1fr',
-    alignItems: 'center',
-    gap: '80px',
-    maxWidth: '1400px',
-    margin: '0 auto',
-    padding: '140px 48px 100px',
-    position: 'relative'
-  }}
->
-  {/* Left Side */}
-  <div>
-    <div
-      style={{
-        color: '#22c55e',
-        fontSize: '12px',
-        fontWeight: 700,
-        letterSpacing: '0.15em',
-        textTransform: 'uppercase',
-        marginBottom: '24px'
-      }}
-    >
-      Market Intelligence Platform
-    </div>
-
-    <h1
-      style={{
-        fontSize: '76px',
-        lineHeight: 1,
-        fontWeight: 700,
-        color: '#fff',
-        letterSpacing: '-0.05em',
-        marginBottom: '28px'
-      }}
-    >
-      Predict
-      <br />
-      Volatility.
-      <br />
-      Trade Smarter.
-    </h1>
-
-    <p
-      style={{
-        color: '#94a3b8',
-        fontSize: '18px',
-        lineHeight: 1.8,
-        maxWidth: '620px',
-        marginBottom: '40px'
-      }}
-    >
-      Sentivvo combines real-time market data,
-      volatility forecasting models and financial
-      news sentiment analysis to help investors
-      understand risk before it happens.
-    </p>
-
-    <div
-      style={{
-        display: 'flex',
-        gap: '14px'
-      }}
-    >
-      <button
-        onClick={() => navigate('/signup')}
-        style={{
-          background: '#22c55e',
-          color: '#000',
-          border: 'none',
-          padding: '14px 28px',
-          borderRadius: '10px',
-          fontWeight: 700,
-          cursor: 'pointer'
-        }}
-      >
-        Start For Free
-      </button>
-
-      <button
-        onClick={() => navigate('/login')}
-        style={{
-          background: 'transparent',
-          color: '#fff',
-          border: '1px solid #334155',
-          padding: '14px 28px',
-          borderRadius: '10px',
-          cursor: 'pointer'
-        }}
-      >
-        Login
-      </button>
-    </div>
-  </div>
-
-  {/* Right Side */}
-  <div
-    style={{
-      background: '#111827',
-      border: '1px solid #1f2937',
-      borderRadius: '18px',
-      overflow: 'hidden',
-      boxShadow: '0 20px 60px rgba(0,0,0,0.4)'
-    }}
-  >
-    <img
-      src="/dashboard-preview.png"
-      alt="dashboard"
-      style={{
-        width: '100%',
-        display: 'block'
-      }}
-    />
-  </div>
-</section>
-
-      {/* ── ABOUT / SPLIT CARD ── */}
-      <section
-        id="about"
-        style={{
-          padding: '96px 24px',
-          borderTop: '1px solid rgba(53,53,52,0.5)',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 1140,
-            margin: '0 auto',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
-            gap: 0,
-            borderRadius: 16,
-            overflow: 'hidden',
-            border: '1px solid rgba(53,53,52,0.5)',
-          }}
-        >
-          {/* Left */}
-          <div
-            style={{
-              background: 'linear-gradient(135deg, rgba(32,31,31,0.8) 0%, rgba(19,19,19,0.9) 100%)',
-              borderRight: '1px solid rgba(53,53,52,0.5)',
-              padding: '56px 48px',
-            }}
-          >
-            <div className="label-caps" style={{ marginBottom: 16 }}>The Volatility Problem</div>
-            <h2
-            style={{
-    fontSize: '48px',
-    fontWeight: 700,
-    lineHeight: 1.1,
-    letterSpacing: '-0.04em',
-    color: '#fff',
-    marginBottom: 24
-  }}
-  >
-  Market volatility
-  <br />
-  shouldn't surprise you.
-</h2>
-            <p style={{ fontSize: 16,lineHeight: 1.8,color: '#94a3b8'}}>
-              Markets react instantly to macro events,
-              earnings announcements and news cycles.
-
-              Sentivvo helps investors identify volatility
-              patterns before they become obvious.</p>
-            <p style={{ fontSize: 14, color: '#8e9379', lineHeight: 1.7 }}>
-              Sentivvo couples{' '}
-              <strong style={{ color: '#c4c9ac' }}>statistical volatility models</strong> with live{' '}
-              <strong style={{ color: '#c4c9ac' }}>real-time market feeds</strong> to build
-              forward-looking probability ranges — so you prepare instead of react.
-            </p>
-          </div>
-
-          {/* Right — live sample card */}
-          <div
-            style={{
-              position: 'relative',
-              background: 'linear-gradient(135deg, rgba(28,27,27,0.8) 0%, rgba(14,14,14,0.9) 100%)',
-              padding: '56px 48px',
-            }}
-          >
-            {/* Glow top-right */}
-            <div
-              style={{
-                position: 'absolute',
-                top: 0,
-                right: 0,
-                width: 240,
-                height: 240,
-                background: 'radial-gradient(circle at top right, rgba(195,244,0,0.06), transparent 70%)',
-                pointerEvents: 'none',
-              }}
-            />
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                marginBottom: 32,
-              }}
-            >
-              <div className="label-caps">Live Sample</div>
-              <span
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  fontSize: 11,
-                  color: '#c3f400',
-                  fontWeight: 600,
-                }}
-              >
-                <span
-                  style={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    background: '#c3f400',
-                    animation: 'pulse-glow 2s ease-in-out infinite',
-                  }}
-                />
-                AAPL
-              </span>
-            </div>
-
-            {[
-              { label: 'Historical Volatility (Ann.)', value: '28.4%', color: '#f59e0b' },
-              { label: 'RSI (14-period)', value: '42.1', color: '#c4c9ac' },
-              { label: '5-Day Expected Range', value: '$178 – $195', color: '#c3f400' },
-              { label: 'Signal', value: '↑ Bullish', color: '#c3f400' },
-            ].map(({ label, value, color }) => (
-              <div
-                key={label}
-                style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '14px 0',
-                  borderBottom: '1px solid rgba(53,53,52,0.4)',
-                }}
-              >
-                <span style={{ fontSize: 13, color: '#8e9379' }}>{label}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color, fontFamily: 'monospace', letterSpacing: '-0.01em' }}>{value}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── FEATURES ── */}
-      <section
-        id="features"
-        style={{
-          padding: '96px 24px',
-          borderTop: '1px solid rgba(53,53,52,0.5)',
-        }}
-      >
-        <div style={{ maxWidth: 1140, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 64 }}>
-            <div className="label-caps" style={{ marginBottom: 16 }}>Platform Features</div>
-            <h2
-              style={{
-                fontSize: 'clamp(28px, 3vw, 40px)',
-                fontWeight: 700,
-                letterSpacing: '-0.03em',
-                color: '#ffffff',
-              }}
-            >
-              Everything You Need to Trade Smarter
-            </h2>
-          </div>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-              gap: 16,
-            }}
-          >
-            {features.map((f, i) => (
-              <GlassCard key={f.title} {...f} delay={i * 80} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── HOW IT WORKS ── */}
-      <section
-        id="how-it-works"
-        style={{
-          padding: '96px 24px',
-          borderTop: '1px solid rgba(53,53,52,0.5)',
-        }}
-      >
-        <div
-          style={{
-            maxWidth: 1140,
-            margin: '0 auto',
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-            gap: 64,
-            alignItems: 'start',
-          }}
-        >
-          <div>
-            <div className="label-caps" style={{ marginBottom: 16 }}>How It Works</div>
-            <h2
-              style={{
-                fontSize: 'clamp(28px, 3vw, 40px)',
-                fontWeight: 700,
-                letterSpacing: '-0.03em',
-                color: '#ffffff',
-                lineHeight: 1.2,
-                marginBottom: 20,
-              }}
-            >
-              From Raw Data to Actionable Signal
-            </h2>
-            <p style={{ fontSize: 14, color: '#8e9379', lineHeight: 1.7 }}>
-              Our four-step pipeline turns thousands of price ticks and news articles into a single,
-              clear forecast — updated every time you load the app.
-            </p>
-          </div>
-          <div>
-            {steps.map((s, i) => (
-              <StepItem key={s.num} {...s} isLast={i === steps.length - 1} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── WHO IT'S FOR ── */}
-      <section
-        id="for-you"
-        style={{
-          padding: '96px 24px',
-          borderTop: '1px solid rgba(53,53,52,0.5)',
-          background: 'rgba(14,14,14,0.5)',
-        }}
-      >
-        <div style={{ maxWidth: 1140, margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: 64 }}>
-            <div className="label-caps" style={{ marginBottom: 16 }}>Who It's For</div>
-            <h2
-              style={{
-                fontSize: 'clamp(28px, 3vw, 40px)',
-                fontWeight: 700,
-                letterSpacing: '-0.03em',
-                color: '#ffffff',
-              }}
-            >
-              Built for Every Market Participant
-            </h2>
-          </div>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
-              gap: 16,
-            }}
-          >
-            {personas.map((p) => (
-              <div key={p.name} className="persona-card">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                  <span
-                    style={{
-                      width: 18,
-                      height: 18,
-                      borderRadius: '50%',
-                      border: '2px solid #c3f400',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      flexShrink: 0,
-                      fontSize: 10,
-                      color: '#c3f400',
-                      fontWeight: 700,
-                    }}
-                  >
-                    ✓
-                  </span>
-                  <h3 style={{ fontSize: 15, fontWeight: 600, color: '#e5e2e1', letterSpacing: '-0.01em' }}>
-                    {p.name}
-                  </h3>
-                </div>
-                <p style={{ fontSize: 13, color: '#8e9379', lineHeight: 1.6 }}>{p.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── CTA ── */}
-      <section
-        style={{
-          position: 'relative',
-          padding: '96px 24px',
-          borderTop: '1px solid rgba(53,53,52,0.5)',
-          textAlign: 'center',
-          overflow: 'hidden',
-        }}
-      >
-        <div
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: 600,
-            height: 600,
-            background: 'radial-gradient(circle, rgba(195,244,0,0.04) 0%, transparent 70%)',
-            pointerEvents: 'none',
-          }}
-        />
-        <div style={{ position: 'relative', zIndex: 10, maxWidth: 560, margin: '0 auto' }}>
-          <div className="label-caps" style={{ marginBottom: 16 }}>Get Started Today</div>
-          <h2
-            style={{
-              fontSize: 'clamp(28px, 3vw, 48px)',
-              fontWeight: 700,
-              letterSpacing: '-0.04em',
-              color: '#ffffff',
-              lineHeight: 1.1,
-              marginBottom: 20,
-            }}
-          >
-            Ready to See the Signal?
-          </h2>
-          <p style={{ fontSize: 14, color: '#8e9379', lineHeight: 1.7, marginBottom: 40 }}>
-            Join Sentivvo and get instant access to live volatility forecasts, portfolio tracking,
-            and market news.
-          </p>
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => navigate('/signup')}
-              style={{
-                padding: '14px 32px',
-                borderRadius: 10,
-                border: 'none',
-                background: '#c3f400',
-                color: '#131313',
-                fontSize: 14,
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-                boxShadow: '0 0 40px rgba(195,244,0,0.15)',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = '#d4ff1a';
-                e.currentTarget.style.boxShadow = '0 0 60px rgba(195,244,0,0.3)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = '#c3f400';
-                e.currentTarget.style.boxShadow = '0 0 40px rgba(195,244,0,0.15)';
-                e.currentTarget.style.transform = 'translateY(0)';
-              }}
-            >
-              Create Free Account →
-            </button>
-            <button
-              onClick={() => navigate('/login')}
-              style={{
-                padding: '14px 32px',
-                borderRadius: 10,
-                border: '1px solid rgba(195,244,0,0.2)',
-                background: 'transparent',
-                color: '#e5e2e1',
-                fontSize: 14,
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.2s',
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'rgba(195,244,0,0.06)';
-                e.currentTarget.style.borderColor = 'rgba(195,244,0,0.4)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-                e.currentTarget.style.borderColor = 'rgba(195,244,0,0.2)';
-              }}
-            >
-              Log In
-            </button>
-          </div>
-        </div>
-      </section>
-
-      {/* ── FOOTER ── */}
-      <footer
-        style={{
-          borderTop: '1px solid rgba(53,53,52,0.5)',
-          padding: '40px 24px',
-          textAlign: 'center',
-          background: '#0e0e0e',
-        }}
-      >
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 10,
-            marginBottom: 16,
-          }}
-        >
-          <div
-            style={{
-              width: 28,
-              height: 28,
-              borderRadius: 8,
-              background: '#c3f400',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 800,
-              fontSize: 13,
-              color: '#131313',
-            }}
-          >
-            S
-          </div>
-          <span
-            style={{
-              fontSize: 14,
-              fontWeight: 700,
-              color: '#635e5c',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            Sentivvo
-          </span>
-        </div>
-        <p style={{ fontSize: 12, color: '#444933' }}>
-          © {new Date().getFullYear()} Sentivvo. Built for educational and research purposes. Not financial advice.
-        </p>
-      </footer>
+      <HowItWorksSection />
+      <FeaturesSection />
+      <ForInvestorsSection onSignup={() => navigate('/signup')} />
+      <Footer />
     </div>
   );
 }

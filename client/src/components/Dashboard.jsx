@@ -155,8 +155,8 @@ function Dashboard({ isDarkMode = false }) {
               <AreaChart data={history}>
                 <defs>
                   <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%"  stopColor="#10b981" stopOpacity={0.18} />
-                    <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                    <stop offset="5%"  stopColor="#006d35" stopOpacity={0.18} />
+                    <stop offset="95%" stopColor="#006d35" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -167,7 +167,7 @@ function Dashboard({ isDarkMode = false }) {
                   labelStyle={{ color: '#0f172a', fontWeight: 600 }}
                   formatter={(v) => [`$${Number(v).toFixed(2)}`, 'Price']}
                 />
-                <Area type="monotone" dataKey="close" stroke="#10b981" strokeWidth={2} fillOpacity={1} fill="url(#colorPrice)" dot={false} />
+                <Area type="monotone" dataKey="close" stroke="#006d35" strokeWidth={2} fillOpacity={1} fill="url(#colorPrice)" dot={false} />
               </AreaChart>
             </ResponsiveContainer>
           )}
@@ -191,7 +191,7 @@ function Dashboard({ isDarkMode = false }) {
                   labelStyle={{ color: '#0f172a', fontWeight: 600 }}
                   formatter={(v) => [`${(v / 1e6).toFixed(1)}M`, 'Volume']}
                 />
-                <Bar dataKey="volume" fill="#10b981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="volume" fill="#006d35" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}

@@ -8,6 +8,7 @@ import { forecastApi } from '../utils/api';
 import { timeAgo } from '../utils/helpers';
 
 import { TRACKED_SYMBOLS } from '../utils/constants';
+import { useSearchParams } from 'react-router-dom';
 
 const getSignalConfig = (isDarkMode) => ({
   bullish: {
@@ -59,11 +60,23 @@ function MetricCard({ label, value, sub, textColor, icon: Icon, isDarkMode }) {
 }
 
 function Forecasts({ isDarkMode = false }) {
-  const [symbol, setSymbol]           = useState('AAPL');
-  const [inputSymbol, setInputSymbol] = useState('AAPL');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const querySymbol = searchParams.get('symbol');
+
+  const [symbol, setSymbol]           = useState(querySymbol?.toUpperCase() || 'AAPL');
+  const [inputSymbol, setInputSymbol] = useState(querySymbol?.toUpperCase() || 'AAPL');
   const [forecast, setForecast]       = useState(null);
   const [loading, setLoading]         = useState(false);
   const [error, setError]             = useState(null);
+
+  // Sync state if query param changes externally
+  useEffect(() => {
+    if (querySymbol) {
+      const sym = querySymbol.trim().toUpperCase();
+      setSymbol(sym);
+      setInputSymbol(sym);
+    }
+  }, [querySymbol]);
 
   const [accuracyData, setAccuracyData] = useState(null);
   const [accuracyLoading, setAccuracyLoading] = useState(false);
@@ -119,7 +132,10 @@ function Forecasts({ isDarkMode = false }) {
   const handleSearch = (e) => {
     e.preventDefault();
     const sym = inputSymbol.trim().toUpperCase();
-    if (sym) { setSymbol(sym); }
+    if (sym) {
+      setSymbol(sym);
+      setSearchParams({ symbol: sym });
+    }
   };
 
   const sig  = forecast ? (getSignalConfig(isDarkMode)[forecast.signal] || getSignalConfig(isDarkMode).neutral) : null;
@@ -144,7 +160,11 @@ function Forecasts({ isDarkMode = false }) {
         {TRACKED_SYMBOLS.map((s) => (
           <button
             key={s}
-            onClick={() => { setSymbol(s); setInputSymbol(s); }}
+            onClick={() => {
+              setSymbol(s);
+              setInputSymbol(s);
+              setSearchParams({ symbol: s });
+            }}
             className={`flex-1 sm:flex-initial px-5 py-2 text-xs font-semibold rounded-xl border cursor-pointer text-center transition-all duration-200
               ${symbol === s
                 ? 'bg-green-600 border-green-600 text-white shadow-sm shadow-green-500/20'

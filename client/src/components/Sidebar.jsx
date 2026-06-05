@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { ChevronDown, Home, TrendingUp, Eye, BarChart3, BookOpen, Briefcase, Zap, Activity, Building2, Gauge, Layers, Globe, Settings, Filter } from 'lucide-react';
+import { ChevronDown, Home, TrendingUp, Eye, BarChart3, BookOpen, Briefcase, Zap, Activity, Building2, Gauge, Layers, Globe, Settings, Filter, X } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 
-function Sidebar({ isOpen, isDarkMode }) {
+function Sidebar({ isOpen, isDarkMode, onClose }) {
   const [expandedSections, setExpandedSections] = useState(['Favorites']);
   const { pathname: currentPath } = useLocation();
 
@@ -41,12 +41,12 @@ function Sidebar({ isOpen, isDarkMode }) {
     {
       title: 'Security Analysis',
       items: [
-        { label: 'Snapshots', href: '/dashboard/snapshot', icon: <Eye size={18} /> },
-        { label: 'Overview', href: '/dashboard/snapshot/s', icon: <Activity size={18} /> },
-        { label: 'Description', href: '/dashboard/snapshot/des', icon: <Building2 size={18} /> },
+        { label: 'Snapshots',       href: '/dashboard/snapshot',      icon: <Eye size={18} /> },
+        { label: 'Overview',        href: '/dashboard/snapshot/s',    icon: <Activity size={18} /> },
+        { label: 'Description',     href: '/dashboard/snapshot/des',  icon: <Building2 size={18} /> },
         { label: 'Percentile Rank', href: '/dashboard/snapshot/rank', icon: <Gauge size={18} /> },
-        { label: 'Exposure', href: '/dashboard/snapshot/fxp', icon: <Layers size={18} /> },
-        { label: 'Holdings', href: '/dashboard/snapshot/hds', icon: <Briefcase size={18} /> },
+        { label: 'Exposure',        href: '/dashboard/snapshot/fxp',  icon: <Layers size={18} /> },
+        { label: 'Holdings',        href: '/dashboard/snapshot/hds',  icon: <Briefcase size={18} /> },
       ],
     },
     {
@@ -64,57 +64,89 @@ function Sidebar({ isOpen, isDarkMode }) {
   ];
 
   if (!isOpen) {
-    return <div className="w-0 transition-all duration-300 ease-in-out" />;
+    return null;
   }
 
-  const getBgColor    = () => isDarkMode ? 'sv-sidebar bg-slate-900 border-slate-800' : 'bg-white border-gray-200';
+  const bg = isDarkMode ? 'sv-sidebar bg-slate-900 border-slate-800' : 'bg-white border-gray-200';
 
-  return (
-    <aside className={`w-72 border-r overflow-y-auto transition-all duration-300 ease-in-out ${getBgColor()}`}>
-      <nav className="py-3">
-        {navSections.map((section) => (
-          <div key={section.title}>
-            <button
-              className={`flex items-center justify-between w-full px-4 py-2.5 bg-transparent border-none text-xs font-semibold uppercase cursor-pointer transition-all ${isDarkMode ? 'text-slate-500 hover:text-white hover:bg-slate-800' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'}`}
-              onClick={() => toggleSection(section.title)}
-            >
-              <span className="tracking-wider">{section.title}</span>
-              <ChevronDown
-                size={18}
-                className={`transition-transform duration-300 ${expandedSections.includes(section.title) ? 'rotate-180' : ''}`}
-              />
-            </button>
+  const navContent = (
+    <nav className="py-3 flex-1 overflow-y-auto">
+      {navSections.map((section) => (
+        <div key={section.title}>
+          <button
+            className={`flex items-center justify-between w-full px-4 py-2.5 bg-transparent border-none text-xs font-semibold uppercase cursor-pointer transition-all ${
+              isDarkMode ? 'text-slate-500 hover:text-white hover:bg-slate-800' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+            }`}
+            onClick={() => toggleSection(section.title)}
+          >
+            <span className="tracking-wider">{section.title}</span>
+            <ChevronDown
+              size={18}
+              className={`transition-transform duration-300 ${expandedSections.includes(section.title) ? 'rotate-180' : ''}`}
+            />
+          </button>
 
-            {expandedSections.includes(section.title) && (
-              <ul className="list-none py-1 px-0 m-0">
-                {section.items.map((item, idx) => {
-                  const active = (item.href === '/dashboard' || item.href === '/dashboard/snapshot')
-                    ? currentPath === item.href || currentPath === `${item.href}/`
-                    : currentPath.includes(item.href);
+          {expandedSections.includes(section.title) && (
+            <ul className="list-none py-1 px-0 m-0">
+              {section.items.map((item, idx) => {
+                const active = (item.href === '/dashboard' || item.href === '/dashboard/snapshot')
+                  ? currentPath === item.href || currentPath === `${item.href}/`
+                  : currentPath.includes(item.href);
 
-                  return (
+                return (
                   <li key={idx}>
                     <Link
                       to={item.href}
+                      onClick={() => { if (window.innerWidth < 768 && onClose) onClose(); }}
                       className={`flex items-center gap-2.5 px-4 py-2 text-sm no-underline transition-all border-l-3 border-transparent
                         ${active ? (isDarkMode ? 'sv-nav-active' : 'sv-nav-active-light') : ''}
                         ${isDarkMode
                           ? 'text-slate-400 hover:text-white hover:bg-slate-800 hover:border-l-green-400'
-                          : 'text-gray-600 hover:text-green-700 hover:bg-green-50 hover:border-l-green-500'}`}
+                          : 'text-gray-600 hover:text-green-700 hover:bg-green-50 hover:border-l-green-500'
+                        }`}
                     >
                       {item.icon && <span className="flex items-center justify-center w-4.5 h-4.5 flex-shrink-0">{item.icon}</span>}
                       <span className="flex-1 text-left">{item.label}</span>
-                      {item.badge && <span className={`inline-block py-0.5 px-1.5 rounded text-xs ml-auto ${isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-gray-200 text-gray-600'}`}>{item.badge}</span>}
+                      {item.badge && (
+                        <span className={`inline-block py-0.5 px-1.5 rounded text-xs ml-auto ${isDarkMode ? 'bg-slate-800 text-slate-400' : 'bg-gray-200 text-gray-600'}`}>
+                          {item.badge}
+                        </span>
+                      )}
                     </Link>
                   </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
-        ))}
-      </nav>
-    </aside>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      ))}
+    </nav>
+  );
+
+  return (
+    <>
+      {/* Mobile: fixed overlay slide-in */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col w-72 border-r overflow-hidden transition-transform duration-300 ease-in-out md:hidden ${bg}`}
+      >
+        <div className={`flex items-center justify-between px-4 py-3 border-b ${isDarkMode ? 'border-slate-800' : 'border-gray-200'}`}>
+          <span className={`text-sm font-bold ${isDarkMode ? 'text-slate-100' : 'text-gray-800'}`}>Menu</span>
+          <button
+            onClick={onClose}
+            className={`p-1 rounded-lg transition-colors ${isDarkMode ? 'text-slate-400 hover:text-white hover:bg-slate-800' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-100'}`}
+            aria-label="Close sidebar"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        {navContent}
+      </aside>
+
+      {/* Desktop: static inline sidebar */}
+      <aside className={`hidden md:flex flex-col w-72 border-r overflow-hidden transition-all duration-300 ease-in-out ${bg}`}>
+        {navContent}
+      </aside>
+    </>
   );
 }
 

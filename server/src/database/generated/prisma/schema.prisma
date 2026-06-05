@@ -28,6 +28,8 @@ model User {
 
   isVerified Boolean @default(false)
 
+  followedStocks String[] @default([])
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -37,4 +39,38 @@ model User {
 enum AuthProvider {
   GOOGLE
   LOCAL
+}
+
+model NewsArticle {
+  id String @id @default(uuid())
+
+  symbol String
+
+  title String
+
+  description String?
+
+  source String?
+
+  articleUrl String @unique
+
+  publishedAt DateTime
+
+  createdAt DateTime @default(now())
+
+  @@index([symbol])
+  @@index([publishedAt])
+}
+
+model Forecast {
+  id                 String   @id @default(uuid())
+  symbol             String
+  forecastDate       DateTime // The date the forecast is FOR
+  forecastVolatility Float
+  confidenceScore    Float
+  sentimentScore     Float
+  fullPayload        Json // Stores the entire rich ML response
+  createdAt          DateTime @default(now())
+
+  @@index([symbol, forecastDate])
 }

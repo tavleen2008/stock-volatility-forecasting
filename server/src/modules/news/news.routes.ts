@@ -1,7 +1,8 @@
 import { Router } from 'express';
-import { fetchNews } from './news.controller';
+import { fetchNewsController } from './news.controller';
 
 const router = Router();
-router.get('/', fetchNews);
+router.get('/', fetchNewsController);
+router.get('/:symbol', fetchNewsController);
 
 export default router;

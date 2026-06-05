@@ -1,115 +1,236 @@
-const SYMBOLS = ['AAPL', 'MSFT', 'TSLA', 'NVDA'];
+import YahooFinance from "yahoo-finance2";
+import { StockMetricsResponse, StockDashboardResponse } from "./stock.types";
+import { safeGet, safeSetex } from "../../config/redis";
+import { fetchNewsForSymbolFromDb } from "../news/news.service";
+import { TRACKED_SYMBOLS } from "./stock.constants";
+import { getRangeParams } from "../../shared/constants/time.constants";
 
-const YF_BASE = 'https://query1.finance.yahoo.com';
-const HEADERS: Record<string, string> = {
-    'User-Agent':
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-    Accept: 'application/json',
+const yahooFinance = new YahooFinance();
+
+
+export const fetchStockMetrics = async (symbol: string): Promise<StockMetricsResponse | null> => {
+    const cacheKey = `stock:metrics:${symbol}`;
+
+    try {
+        const cached = await safeGet(cacheKey);
+        if (cached) {
+            console.log(`[Stock Service] Cache HIT for ${symbol} metrics`);
+            return JSON.parse(cached);
+        }
+
+        console.log(`[Stock Service] Cache MISS for ${symbol} metrics. Fetching live...`);
+
+        const result: any = await yahooFinance.quote(symbol);
+        if (!result) return null;
+
+        const metrics = {
+            symbol: result.symbol,
+            currentPrice: result.regularMarketPrice || 0,
+            dayHigh: result.regularMarketDayHigh || 0,
+            dayLow: result.regularMarketDayLow || 0,
+            openPrice: result.regularMarketOpen || 0,
+            previousClose: result.regularMarketPreviousClose || 0,
+            volume: result.regularMarketVolume || 0,
+            marketCap: result.marketCap || null,
+            currency: result.currency || "USD",
+            exchange: result.exchange || undefined,
+            updatedAt: new Date().toISOString()
+        };
+
+        await safeSetex(cacheKey, 60, JSON.stringify(metrics));
+        return metrics;
+    } catch (error) {
+        console.error(`[Stock Service] Error fetching metrics for ${symbol}:`, error);
+        return null;
+    }
 };
 
-export interface StockQuote {
-    symbol: string;
-    name: string;
-    price: number;
-    change: number;
-    changePercent: number;
-    volume: number;
-    marketCap?: number;
-    currency: string;
-    high52Week?: number;
-    low52Week?: number;
-}
+export const fetchTrackedStocksList = async () => {
+    const cacheKey = 'stock:list';
+    try {
+        const cached = await safeGet(cacheKey);
+        if (cached) return JSON.parse(cached);
 
-export interface PricePoint {
-    date: string;
-    open: number | null;
-    high: number | null;
-    low: number | null;
-    close: number | null;
-    volume: number | null;
-}
+        const results = await Promise.allSettled(
+            TRACKED_SYMBOLS.map(async ({ symbol, name }) => {
+                try {
+                    const q: any = await yahooFinance.quote(symbol);
+                    const price = q.regularMarketPrice ?? 0;
+                    const prevClose = q.regularMarketPreviousClose ?? price;
+                    const change = +(price - prevClose).toFixed(2);
+                    const changePercent = prevClose ? +((change / prevClose) * 100).toFixed(2) : 0;
+                    return {
+                        symbol,
+                        name: q.longName || q.shortName || name,
+                        price,
+                        change,
+                        changePercent,
+                        volume: q.regularMarketVolume ?? 0,
+                        marketCap: q.marketCap ?? null,
+                    };
+                } catch {
+                    return { symbol, name, price: 0, change: 0, changePercent: 0, volume: 0, marketCap: null };
+                }
+            })
+        );
 
-async function fetchQuote(symbol: string): Promise<StockQuote> {
-    const url = `${YF_BASE}/v8/finance/chart/${symbol}?interval=1d&range=5d`;
-    const res = await fetch(url, { headers: HEADERS });
-    if (!res.ok) throw new Error(`Yahoo Finance returned ${res.status} for ${symbol}`);
-    const data = (await res.json()) as any;
-    const result = data.chart?.result?.[0];
-    if (!result) throw new Error(`No chart data for ${symbol}`);
+        const stocks = results
+            .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
+            .map(r => r.value);
 
-    const meta = result.meta;
-    const closes: number[] = result.indicators?.quote?.[0]?.close ?? [];
-    const validCloses = closes.filter((c: number | null) => c !== null);
+        await safeSetex(cacheKey, 60, JSON.stringify(stocks));
+        return stocks;
+    } catch (error) {
+        console.error('[Stock Service] Error fetching tracked stocks list:', error);
+        return [];
+    }
+};
 
-    const currentPrice: number = meta.regularMarketPrice ?? validCloses[validCloses.length - 1] ?? 0;
-    const prevClose: number =
-        meta.chartPreviousClose ?? meta.previousClose ?? validCloses[validCloses.length - 2] ?? currentPrice;
-    const change = currentPrice - prevClose;
-    const changePercent = prevClose !== 0 ? (change / prevClose) * 100 : 0;
+export const fetchStockHistory = async (symbol: string, range: string = '1mo') => {
+    const cacheKey = `stock:history:${symbol}:${range}`;
+    try {
+        const cached = await safeGet(cacheKey);
+        if (cached) return JSON.parse(cached);
 
-    return {
-        symbol,
-        name: meta.longName || meta.shortName || symbol,
-        price: parseFloat(currentPrice.toFixed(2)),
-        change: parseFloat(change.toFixed(2)),
-        changePercent: parseFloat(changePercent.toFixed(2)),
-        volume: meta.regularMarketVolume ?? 0,
-        marketCap: meta.marketCap,
-        currency: meta.currency ?? 'USD',
-        high52Week: meta.fiftyTwoWeekHigh,
-        low52Week: meta.fiftyTwoWeekLow,
+        const params = getRangeParams(range);
+        const result: any = await yahooFinance.chart(symbol, {
+            period1: params.period1,
+            interval: params.interval,
+        });
+
+        const quotes = result.quotes || [];
+
+        const history = quotes.map((d: any) => ({
+            date: d.date instanceof Date ? d.date.toISOString().split('T')[0] : String(d.date),
+            open: +(d.open ?? 0).toFixed(2),
+            high: +(d.high ?? 0).toFixed(2),
+            low:  +(d.low  ?? 0).toFixed(2),
+            close: +(d.close ?? 0).toFixed(2),
+            volume: d.volume ?? 0,
+        }));
+
+        await safeSetex(cacheKey, 300, JSON.stringify(history)); // 5-min cache
+        return history;
+    } catch (error) {
+        console.error(`[Stock Service] Error fetching history for ${symbol}:`, error);
+        return [];
+    }
+};
+
+export const fetchStockDashboard = async (symbol: string): Promise<StockDashboardResponse> => {
+    const [metrics, news] = await Promise.all([
+        fetchStockMetrics(symbol),
+        fetchNewsForSymbolFromDb(symbol, 5, 1)
+    ]);
+
+    const mockForecast = {
+        prediction: "UP" as const,
+        confidence: 85.5,
+        targetPrice: metrics ? +(metrics.currentPrice * 1.05).toFixed(2) : 0
     };
-}
 
-async function fetchHistory(symbol: string, range = '1mo'): Promise<PricePoint[]> {
-    // Choose interval based on range
-    const intervalMap: Record<string, string> = {
-        '1d': '5m',
-        '5d': '15m',
-        '1mo': '1d',
-        '3mo': '1d',
-        '6mo': '1d',
-        '1y': '1wk',
-        '5y': '1mo',
-    };
-    const interval = intervalMap[range] ?? '1d';
-    const url = `${YF_BASE}/v8/finance/chart/${symbol}?interval=${interval}&range=${range}`;
-    const res = await fetch(url, { headers: HEADERS });
-    if (!res.ok) throw new Error(`Yahoo Finance returned ${res.status} for ${symbol} history`);
-    const data = (await res.json()) as any;
-    const result = data.chart?.result?.[0];
-    if (!result) throw new Error(`No history data for ${symbol}`);
+    return { symbol, metrics, news: news || [], forecast: mockForecast };
+};
 
-    const timestamps: number[] = result.timestamp ?? [];
-    const quote = result.indicators?.quote?.[0] ?? {};
+// ────────────────────────────────────────────────────
+//  Extended stock overview (for Security Analysis → Overview)
+//  Exposes P/E, EPS, beta, 52-wk range, dividend yield, etc.
+// ────────────────────────────────────────────────────
+export const fetchStockOverview = async (symbol: string) => {
+    const cacheKey = `stock:overview:${symbol}`;
+    try {
+        const cached = await safeGet(cacheKey);
+        if (cached) return JSON.parse(cached);
 
-    return timestamps
-        .map((ts, i) => ({
-            date: new Date(ts * 1000).toISOString().split('T')[0],
-            open: quote.open?.[i] ?? null,
-            high: quote.high?.[i] ?? null,
-            low: quote.low?.[i] ?? null,
-            close: quote.close?.[i] ?? null,
-            volume: quote.volume?.[i] ?? null,
-        }))
-        .filter((d) => d.close !== null);
-}
+        const result: any = await yahooFinance.quote(symbol);
+        if (!result) return null;
 
-export const StockService = {
-    getDefaultSymbols: () => SYMBOLS,
+        const overview = {
+            symbol: result.symbol,
+            shortName: result.shortName || result.longName || symbol,
+            longName: result.longName || result.shortName || symbol,
+            currentPrice: result.regularMarketPrice || 0,
+            previousClose: result.regularMarketPreviousClose || 0,
+            openPrice: result.regularMarketOpen || 0,
+            dayHigh: result.regularMarketDayHigh || 0,
+            dayLow: result.regularMarketDayLow || 0,
+            volume: result.regularMarketVolume || 0,
+            avgVolume: result.averageDailyVolume3Month || result.averageDailyVolume10Day || 0,
+            marketCap: result.marketCap || null,
+            trailingPE: result.trailingPE || null,
+            forwardPE: result.forwardPE || null,
+            epsTrailing: result.epsTrailingTwelveMonths || null,
+            epsForward: result.epsForward || null,
+            beta: result.beta || null,
+            fiftyTwoWeekHigh: result.fiftyTwoWeekHigh || null,
+            fiftyTwoWeekLow: result.fiftyTwoWeekLow || null,
+            fiftyDayAverage: result.fiftyDayAverage || null,
+            twoHundredDayAverage: result.twoHundredDayAverage || null,
+            dividendYield: result.dividendYield || null,
+            dividendRate: result.dividendRate || null,
+            exDividendDate: result.exDividendDate || null,
+            earningsDate: result.earningsTimestamp || null,
+            priceToBook: result.priceToBook || null,
+            bookValue: result.bookValue || null,
+            currency: result.currency || "USD",
+            exchange: result.fullExchangeName || result.exchange || "",
+            quoteType: result.quoteType || "EQUITY",
+            change: result.regularMarketChange || 0,
+            changePercent: result.regularMarketChangePercent || 0,
+            updatedAt: new Date().toISOString(),
+        };
 
-    /** Fetch live quotes for all default symbols in parallel */
-    list: async (): Promise<StockQuote[]> => {
-        const results = await Promise.allSettled(SYMBOLS.map(fetchQuote));
-        return results
-            .filter((r): r is PromiseFulfilledResult<StockQuote> => r.status === 'fulfilled')
-            .map((r) => r.value);
-    },
+        await safeSetex(cacheKey, 120, JSON.stringify(overview)); // 2-min cache
+        return overview;
+    } catch (error) {
+        console.error(`[Stock Service] Error fetching overview for ${symbol}:`, error);
+        return null;
+    }
+};
 
-    /** Fetch a single quote */
-    getQuote: (symbol: string) => fetchQuote(symbol.toUpperCase()),
+// ────────────────────────────────────────────────────
+//  Company profile (for Security Analysis → Description)
+//  Uses quoteSummary assetProfile module
+// ────────────────────────────────────────────────────
+export const fetchStockProfile = async (symbol: string) => {
+    const cacheKey = `stock:profile:${symbol}`;
+    try {
+        const cached = await safeGet(cacheKey);
+        if (cached) return JSON.parse(cached);
 
-    /** Fetch OHLCV history */
-    getHistory: (symbol: string, range?: string) =>
-        fetchHistory(symbol.toUpperCase(), range ?? '1mo'),
+        const result: any = await yahooFinance.quoteSummary(symbol, {
+            modules: ['assetProfile', 'summaryDetail', 'price'],
+        });
+        if (!result) return null;
+
+        const ap = result.assetProfile || {};
+        const sd = result.summaryDetail || {};
+        const pr = result.price || {};
+
+        const profile = {
+            symbol,
+            longName: pr.longName || pr.shortName || symbol,
+            shortName: pr.shortName || symbol,
+            sector: ap.sector || null,
+            industry: ap.industry || null,
+            website: ap.website || null,
+            country: ap.country || null,
+            city: ap.city || null,
+            state: ap.state || null,
+            address: ap.address1 || null,
+            fullTimeEmployees: ap.fullTimeEmployees || null,
+            longBusinessSummary: ap.longBusinessSummary || null,
+            // Extra from summaryDetail
+            marketCap: sd.marketCap || pr.marketCap || null,
+            currency: pr.currency || "USD",
+            exchange: pr.exchangeName || "",
+            updatedAt: new Date().toISOString(),
+        };
+
+        await safeSetex(cacheKey, 600, JSON.stringify(profile)); // 10-min cache (rarely changes)
+        return profile;
+    } catch (error) {
+        console.error(`[Stock Service] Error fetching profile for ${symbol}:`, error);
+        return null;
+    }
 };

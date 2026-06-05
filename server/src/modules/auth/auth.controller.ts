@@ -3,7 +3,7 @@ import { z } from 'zod';
 import * as authService from './auth.service';
 import config from '../../config/env';
 import type { User } from './auth.service';
-import { registerSchema, loginSchema, verifyEmailSchema, resendCodeSchema } from './auth.schemas';
+import { registerSchema, loginSchema, verifyEmailSchema, resendCodeSchema, forgotPasswordSchema, resetPasswordSchema } from './auth.schemas';
 
 /**
  * Strips internal/sensitive fields from the User object before sending to client.
@@ -34,10 +34,6 @@ export const googleCallback = async (req: Request, res: Response, next: NextFunc
 
         const { accessToken, refreshToken } = await authService.generateTokens(user);
         
-        // We can't easily set cookies on a redirect if the frontend is on a different domain,
-        // but for local dev with same domain it works. For production OAuth, usually you redirect
-        // with a short-lived one-time code to exchange for tokens on the frontend.
-        // For simplicity here, we'll set the cookie and redirect with access token.
         setRefreshTokenCookie(res, refreshToken);
 
         if (config.frontendUrl) {
@@ -187,6 +183,42 @@ export const logout = async (req: Request, res: Response, next: NextFunction) =>
         res.clearCookie('refreshToken');
         return res.status(200).json({ message: 'Logged out successfully' });
     } catch (error) {
+        return next(error);
+    }
+};
+
+export const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const data = forgotPasswordSchema.parse(req.body);
+        await authService.forgotPassword(data);
+        
+        // We always return success to prevent email enumeration attacks
+        return res.status(200).json({
+            message: 'If that email is registered, a password reset code has been sent.',
+        });
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ message: 'Validation failed', errors: (error as any).errors });
+        }
+        return next(error);
+    }
+};
+
+export const resetPassword = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const data = resetPasswordSchema.parse(req.body);
+        await authService.resetPassword(data);
+        
+        return res.status(200).json({
+            message: 'Password reset successfully. You can now log in with your new password.',
+        });
+    } catch (error) {
+        if (error instanceof z.ZodError) {
+            return res.status(400).json({ message: 'Validation failed', errors: (error as any).errors });
+        }
+        if (error instanceof Error && (error.message === 'Invalid reset code' || error.message === 'Reset code expired or invalid email')) {
+            return res.status(400).json({ message: error.message });
+        }
         return next(error);
     }
 };

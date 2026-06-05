@@ -10,6 +10,8 @@ import newsRouter from './modules/news/news.routes';
 import stocksRouter from './modules/stocks/stock.routes';
 import forecastsRouter from './modules/forecasts/forecast.routes';
 import healthRouter from './modules/health/health.routes';
+import marketRouter from './modules/market/market.routes';
+import dashboardRouter from './modules/dashboard/dashboard.routes';
 import errorMiddleware from './middleware/error.middleware';
 import requestLogger from './middleware/request-logger.middleware';
 import config from './config/env';
@@ -45,6 +47,8 @@ app.use('/api/users', usersRouter);
 app.use('/api/news', newsRouter);
 app.use('/api/stocks', stocksRouter);
 app.use('/api/forecasts', forecastsRouter);
+app.use('/api/market', marketRouter);
+app.use('/api/dashboard', dashboardRouter);
 app.use('/api/health', healthRouter);
 
 app.get('/', (_req, res) => res.json({ status: 'ok' }));

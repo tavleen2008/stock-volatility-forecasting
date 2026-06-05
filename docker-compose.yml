@@ -5,8 +5,9 @@ services:
     image: redis:alpine
     container_name: volatility_redis
     restart: unless-stopped
-    # We do not expose the port to the host machine for security. 
-    # It will only be accessible by the backend on the docker network.
+    ports:
+      - "6379:6379"
+    # Port is exposed so your local Node app can connect to it.
 
   backend:
     build:
@@ -20,6 +21,10 @@ services:
       - ./server/.env
     environment:
       - REDIS_URL=redis://redis:6379
+      - RUNNING_IN_DOCKER=true
+      - ML_SERVICE_URL=http://ml:8080
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       - redis
 
@@ -33,3 +38,16 @@ services:
       - "5173:80"
     depends_on:
       - backend
+
+  ml:
+    build:
+      context: ./ML/quant_pipeline
+      dockerfile: Dockerfile
+    container_name: volatility_ml
+    restart: unless-stopped
+    ports:
+      - "8081:8080"
+    env_file:
+      - ./ML/quant_pipeline/.env
+    depends_on:
+      - redis

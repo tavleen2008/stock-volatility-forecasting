@@ -12,7 +12,6 @@ __pycache__/
 *.csv
 *.dat
 *.pkl
-*.joblib
 *.h5
 *.hdf5
 *.npy
@@ -23,7 +22,7 @@ mlruns/
 *.db
 
 # Outputs / Artifacts
-artifacts/
+
 graphify-out/
 outputs/
 temp.db

@@ -1,5 +1,4 @@
 {
-<<<<<<< HEAD
   "name": "financial-dashboard",
   "version": "0.1.0",
   "private": true,
@@ -39,10 +38,5 @@
     "@vitejs/plugin-react": "^4.2.0",
     "tailwindcss": "^4.3.0",
     "vite": "^5.2.0"
-=======
-  "dependencies": {
-    "passport": "^0.7.0",
-    "passport-google-oidc": "^0.1.0"
->>>>>>> 39326e10f7d79f30d4bf20ce519208fece840221
   }
 }

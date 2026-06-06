@@ -37,9 +37,14 @@ export const googleCallback = async (req: Request, res: Response, next: NextFunc
         setRefreshTokenCookie(res, refreshToken);
 
         if (config.frontendUrl) {
-            const redirectUrl = `${config.frontendUrl.replace(/\/$/, '')}/auth/success?token=${encodeURIComponent(
-                accessToken
-            )}`;
+            const sanitized = sanitizeUser(user);
+            const params = new URLSearchParams({
+                token: accessToken,
+                name: sanitized.name || '',
+                email: sanitized.email || '',
+                avatar: sanitized.avatarUrl || '',
+            });
+            const redirectUrl = `${config.frontendUrl.replace(/\/$/, '')}/auth/success?${params.toString()}`;
             return res.redirect(redirectUrl);
         }
 

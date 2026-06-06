@@ -1,5 +1,7 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+
+const API_URL = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL) || 'http://localhost:3000';
 
 /* ─── Ticker data ───────────────────────────────────────────── */
 const TICKERS = [
@@ -189,8 +191,111 @@ function Navbar({ onLogin, onSignup, activeSection }) {
   );
 }
 
+/* ─── Live AAPL helpers ─────────────────────────────────────── */
+function calcRSI(closes, period = 14) {
+  if (closes.length <= period) return 50;
+  let gains = 0, losses = 0;
+  for (let i = 1; i <= period; i++) {
+    const d = closes[i] - closes[i - 1];
+    if (d > 0) gains += d; else losses -= d;
+  }
+  let ag = gains / period, al = losses / period;
+  for (let i = period + 1; i < closes.length; i++) {
+    const d = closes[i] - closes[i - 1];
+    ag = (ag * (period - 1) + (d > 0 ? d : 0)) / period;
+    al = (al * (period - 1) + (d < 0 ? -d : 0)) / period;
+  }
+  if (al === 0) return 100;
+  return +(100 - 100 / (1 + ag / al)).toFixed(1);
+}
+
+function calcAnnVol(closes) {
+  if (closes.length < 2) return 25;
+  const lr = [];
+  for (let i = 1; i < closes.length; i++) lr.push(Math.log(closes[i] / closes[i - 1]));
+  const mean = lr.reduce((s, r) => s + r, 0) / lr.length;
+  const variance = lr.reduce((s, r) => s + (r - mean) ** 2, 0) / (lr.length - 1);
+  return +(Math.sqrt(variance) * Math.sqrt(252) * 100).toFixed(1);
+}
+
+function buildSparklinePath(closes, W = 400, H = 180) {
+  if (!closes || closes.length < 2) return { d: '', fill: '' };
+  const min = Math.min(...closes);
+  const max = Math.max(...closes);
+  const range = max - min || 1;
+  const pts = closes.map((c, i) => {
+    const x = (i / (closes.length - 1)) * W;
+    const y = H - ((c - min) / range) * (H - 20) - 10;
+    return `${x.toFixed(1)},${y.toFixed(1)}`;
+  });
+  const d = 'M' + pts.join(' L');
+  const fill = d + ` L${W},${H} L0,${H} Z`;
+  return { d, fill };
+}
+
 /* ─── Section: Hero ─────────────────────────────────────────── */
 function HeroSection({ onSignup, onLogin }) {
+  const [liveData, setLiveData] = useState(null);   // { price, change, changePct, closes, vol, rsi, range5d, signal }
+  const [loading, setLoading]  = useState(true);
+
+  const fetchLive = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [quoteRes, histRes] = await Promise.all([
+        fetch(`${API_URL}/api/stocks/AAPL?t=${Date.now()}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null),
+        fetch(`${API_URL}/api/stocks/AAPL/history?range=1mo&t=${Date.now()}`, { cache: 'no-store' }).then(r => r.ok ? r.json() : null),
+      ]);
+
+      const stock  = quoteRes?.stock || quoteRes;
+      const history = histRes?.history || [];
+      const closes  = history.map(h => h.close).filter(Boolean);
+
+      const price     = stock?.price ?? stock?.currentPrice ?? 0;
+      const change    = stock?.change ?? 0;
+      const changePct = stock?.changePercent ?? 0;
+
+      const vol    = calcAnnVol(closes);
+      const rsi    = calcRSI(closes);
+      const dailyVolFrac = (vol / 100) / Math.sqrt(252);
+      const vol5d  = dailyVolFrac * Math.sqrt(5);
+      const low5d  = price > 0 ? +(price * Math.exp(-vol5d)).toFixed(2) : 0;
+      const high5d = price > 0 ? +(price * Math.exp(vol5d)).toFixed(2) : 0;
+      const signal = rsi < 35 ? 'Bullish' : rsi > 65 ? 'Bearish' : 'Neutral';
+
+      setLiveData({ price, change, changePct, closes, vol, rsi, low5d, high5d, signal });
+    } catch (_) { /* silently use fallback */ }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { fetchLive(); }, [fetchLive]);
+
+  // Derived display values
+  const price     = liveData?.price     ?? 0;
+  const change    = liveData?.change    ?? 0;
+  const changePct = liveData?.changePct ?? 0;
+  const vol       = liveData?.vol       ?? 28.4;
+  const rsi       = liveData?.rsi       ?? 42.1;
+  const low5d     = liveData?.low5d     ?? 0;
+  const high5d    = liveData?.high5d    ?? 0;
+  const signal    = liveData?.signal    ?? 'Bullish';
+  const closes    = liveData?.closes    ?? [];
+  const signalColor = signal === 'Bullish' ? '#006d35' : signal === 'Bearish' ? '#dc2626' : '#d97706';
+  const signalArrow = signal === 'Bullish' ? '↑' : signal === 'Bearish' ? '↓' : '→';
+  const isUp = change >= 0;
+
+  const { d: sparkLine, fill: sparkFill } = buildSparklinePath(closes, 400, 140);
+
+  const tableRows = loading ? [] : [
+    { label: 'Historical Volatility (Ann.)', value: `${vol}%`, color: '#1a1c1c' },
+    { label: 'RSI (14-period)',              value: `${rsi}`,  color: '#1a1c1c' },
+    { label: '5-Day Expected Range',
+      value: price > 0 ? `$${low5d} — $${high5d}` : '—',
+      color: '#1a1c1c' },
+    { label: 'Signal',
+      value: `${signalArrow} ${signal}`,
+      color: signalColor },
+  ];
+
   return (
     <section style={{
       minHeight: 'calc(100vh - 112px)',
@@ -317,55 +422,125 @@ function HeroSection({ onSignup, onLogin }) {
             display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6b7b6c', fontFamily: '"Hanken Grotesk", sans-serif' }}>LIVE SAMPLE</span>
+              <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6b7b6c', fontFamily: '"Hanken Grotesk", sans-serif' }}>LIVE DATA</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#fff', border: '1px solid #e2e2e2', borderRadius: 6, padding: '3px 10px' }}>
                 <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#006d35', animation: 'sv-pulse 2s infinite' }} />
                 <span style={{ fontSize: 11, fontWeight: 700, color: '#1a1c1c', fontFamily: '"JetBrains Mono", monospace', letterSpacing: '0.05em' }}>AAPL</span>
               </div>
             </div>
-            <span style={{ fontSize: 20, color: '#6b7b6c' }}>⋮</span>
+            <span
+              style={{
+                fontSize: 20,
+                color: '#6b7b6c',
+                cursor: 'pointer',
+                display: 'inline-block',
+                animation: loading ? 'sv-spin 1s linear infinite' : 'none',
+              }}
+              onClick={fetchLive}
+              title="Refresh"
+            >
+              ↻
+            </span>
           </div>
 
-          {/* Simulated price chart */}
-          <div style={{ position: 'relative', height: 180, background: '#fff', overflow: 'hidden' }}>
+          {/* Price display area */}
+          <div style={{
+            padding: '16px 24px',
+            borderBottom: '1px solid rgba(186,203,185,0.2)',
+            display: 'flex',
+            alignItems: 'baseline',
+            justifyContent: 'space-between',
+            background: '#fff',
+          }}>
+            {loading ? (
+              <div>
+                <div style={{ width: 100, height: 28, borderRadius: 4, background: '#e8ede8', marginBottom: 6, animation: 'sv-shimmer 1.5s infinite' }} />
+                <div style={{ width: 140, height: 14, borderRadius: 4, background: '#e8ede8', animation: 'sv-shimmer 1.5s infinite' }} />
+              </div>
+            ) : (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+                  <span style={{ fontSize: 32, fontWeight: 800, color: '#1a1c1c', fontFamily: '"JetBrains Mono", monospace', letterSpacing: '-0.03em' }}>
+                    {price > 0 ? `$${price.toFixed(2)}` : '—'}
+                  </span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: isUp ? '#006d35' : '#dc2626', fontFamily: '"Hanken Grotesk", sans-serif' }}>
+                    {isUp ? '+' : ''}{change.toFixed(2)} ({isUp ? '+' : ''}{changePct.toFixed(2)}%)
+                  </span>
+                </div>
+                <div style={{ fontSize: 11, color: '#6b7b6c', fontWeight: 600, marginTop: 4, fontFamily: '"Hanken Grotesk", sans-serif' }}>
+                  AAPL · NASDAQ · Real-time Price
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Live price chart */}
+          <div style={{ position: 'relative', height: 140, background: '#fff', overflow: 'hidden' }}>
+            {/* Dot grid */}
             <div style={{
               position: 'absolute', inset: 0, opacity: 0.3,
               backgroundImage: 'radial-gradient(#bacbb9 1px, transparent 1px)',
               backgroundSize: '20px 20px',
             }} />
-            <svg width="100%" height="100%" viewBox="0 0 400 180" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="heroGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#006d35" stopOpacity="0.18" />
-                  <stop offset="100%" stopColor="#006d35" stopOpacity="0" />
-                </linearGradient>
-              </defs>
-              <path d="M0,140 Q60,120 100,130 T180,90 T270,70 T360,40 T400,30" stroke="#006d35" strokeWidth="2.5" fill="none" />
-              <path d="M0,140 Q60,120 100,130 T180,90 T270,70 T360,40 T400,30 V180 H0 Z" fill="url(#heroGrad)" />
-            </svg>
-            <div style={{ position: 'absolute', top: 16, right: 20 }}>
-              <div style={{ fontSize: 22, fontWeight: 700, color: '#1a1c1c', fontFamily: '"JetBrains Mono", monospace' }}>$189.43</div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#006d35', letterSpacing: '0.08em', fontFamily: '"Hanken Grotesk", sans-serif' }}>+1.24% today</div>
-            </div>
+
+            {loading ? (
+              /* Skeleton shimmer */
+              <div style={{
+                position: 'absolute', inset: 0,
+                background: 'linear-gradient(90deg, #f3f3f4 25%, #e8ede8 50%, #f3f3f4 75%)',
+                backgroundSize: '200% 100%',
+                animation: 'sv-shimmer 1.5s infinite',
+              }} />
+            ) : closes.length > 1 ? (
+              <svg width="100%" height="100%" viewBox="0 0 400 140" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="heroGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={isUp ? '#006d35' : '#dc2626'} stopOpacity="0.2" />
+                    <stop offset="100%" stopColor={isUp ? '#006d35' : '#dc2626'} stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <path d={sparkFill} fill="url(#heroGrad)" />
+                <path d={sparkLine} stroke={isUp ? '#006d35' : '#dc2626'} strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            ) : (
+              /* Fallback static curve if no history */
+              <svg width="100%" height="100%" viewBox="0 0 400 140" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="heroGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#006d35" stopOpacity="0.18" />
+                    <stop offset="100%" stopColor="#006d35" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <path d="M0,120 Q60,100 100,110 T180,70 T270,50 T360,30 T400,20" stroke="#006d35" strokeWidth="2.5" fill="none" />
+                <path d="M0,120 Q60,100 100,110 T180,70 T270,50 T360,30 T400,20 V140 H0 Z" fill="url(#heroGrad)" />
+              </svg>
+            )}
           </div>
 
           {/* Data table */}
           <div style={{ padding: '16px 24px 20px' }}>
-            {[
-              { label: 'Historical Volatility (Ann.)', value: '28.4%', color: '#1a1c1c' },
-              { label: 'RSI (14-period)', value: '42.1', color: '#1a1c1c' },
-              { label: '5-Day Expected Range', value: '$178 — $195', color: '#1a1c1c' },
-              { label: 'Signal', value: '↑ Bullish', color: '#006d35' },
-            ].map(({ label, value, color }) => (
-              <div key={label} style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '10px 0',
-                borderBottom: '1px solid rgba(186,203,185,0.4)',
-              }}>
-                <span style={{ fontSize: 13, color: '#3b4a3d', fontFamily: '"Hanken Grotesk", sans-serif' }}>{label}</span>
-                <span style={{ fontSize: 13, fontWeight: 700, color, fontFamily: '"JetBrains Mono", monospace', letterSpacing: '-0.01em' }}>{value}</span>
-              </div>
-            ))}
+            {loading ? (
+              [0,1,2,3].map(i => (
+                <div key={i} style={{
+                  display: 'flex', justifyContent: 'space-between',
+                  padding: '10px 0', borderBottom: '1px solid rgba(186,203,185,0.4)',
+                }}>
+                  <div style={{ width: '55%', height: 13, borderRadius: 4, background: '#e8ede8', animation: 'sv-shimmer 1.5s infinite' }} />
+                  <div style={{ width: '25%', height: 13, borderRadius: 4, background: '#e8ede8', animation: 'sv-shimmer 1.5s infinite' }} />
+                </div>
+              ))
+            ) : (
+              tableRows.map(({ label, value, color }) => (
+                <div key={label} style={{
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  padding: '10px 0',
+                  borderBottom: '1px solid rgba(186,203,185,0.4)',
+                }}>
+                  <span style={{ fontSize: 13, color: '#3b4a3d', fontFamily: '"Hanken Grotesk", sans-serif' }}>{label}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color, fontFamily: '"JetBrains Mono", monospace', letterSpacing: '-0.01em' }}>{value}</span>
+                </div>
+              ))
+            )}
             <button
               onClick={onSignup}
               style={{
@@ -734,6 +909,14 @@ export default function Landing() {
         @keyframes sv-pulse {
           0%, 100% { opacity: 1; transform: scale(1); }
           50%       { opacity: 0.6; transform: scale(0.85); }
+        }
+        @keyframes sv-shimmer {
+          0%   { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+        @keyframes sv-spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
         }
         @keyframes sv-fadeup {
           from { opacity: 0; transform: translateY(28px); }

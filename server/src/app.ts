@@ -14,20 +14,37 @@ import marketRouter from './modules/market/market.routes';
 import dashboardRouter from './modules/dashboard/dashboard.routes';
 import errorMiddleware from './middleware/error.middleware';
 import requestLogger from './middleware/request-logger.middleware';
+import { globalLimiter } from './middleware/rate-limit.middleware';
 import config from './config/env';
 
 const app = express();
 
 app.use(cors({
-    origin: config.frontendUrl || 'http://localhost:5173',
+    origin: (origin, callback) => {
+        const allowed = [
+            config.frontendUrl,
+            'http://localhost:5173',
+            'http://localhost:5174',
+            'http://localhost:3000',
+        ].filter(Boolean);
+        if (!origin || allowed.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error(`CORS: origin ${origin} not allowed`));
+        }
+    },
     credentials: true,
 }));
+
 app.use(morgan(config.nodeEnv === 'production' ? 'combined' : 'dev'));
 app.use(express.json());
 app.use(cookieParser());
 app.use(passport.initialize());
 
 app.use(requestLogger);
+
+// Apply global rate limiting to all requests
+app.use(globalLimiter);
 
 app.use('/api/auth', authRouter);
 app.use('/api/users', usersRouter);

@@ -331,7 +331,7 @@ function Dashboard({ isDarkMode = false }) {
       )}
 
       {/* ── Stat cards ── */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         <StatCard
           label="Total Volume"
           value={totalVol > 0 ? `${(totalVol / 1e9).toFixed(1)}B` : '—'}
@@ -368,7 +368,7 @@ function Dashboard({ isDarkMode = false }) {
       <StockComparison isDarkMode={isDarkMode} />
 
       {/* ── Charts ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
 
         {/* Price chart */}
         <div className={`border rounded-2xl p-5 shadow-sm ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'}`}>
@@ -407,9 +407,10 @@ function Dashboard({ isDarkMode = false }) {
           </div>
 
           {histLoading ? (
-            <div className={`flex items-center justify-center h-[280px] text-sm ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>Loading chart…</div>
+            <div className={`flex items-center justify-center text-sm ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`} style={{ height: 260 }}>Loading chart…</div>
           ) : (
-            <ResponsiveContainer width="100%" height={280}>
+            <div style={{ width: '100%', height: 260 }}>
+            <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={history}>
                 <defs>
                   <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
@@ -431,6 +432,7 @@ function Dashboard({ isDarkMode = false }) {
                 <Area type="monotone" dataKey="close" stroke="#006d35" strokeWidth={2} fillOpacity={1} fill="url(#colorPrice)" dot={false} />
               </AreaChart>
             </ResponsiveContainer>
+            </div>
           )}
         </div>
 
@@ -440,9 +442,10 @@ function Dashboard({ isDarkMode = false }) {
             Trading Volume — {selectedSymbol}
           </h3>
           {histLoading ? (
-            <div className={`flex items-center justify-center h-[280px] text-sm ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`}>Loading chart…</div>
+            <div className={`flex items-center justify-center text-sm ${isDarkMode ? 'text-slate-500' : 'text-gray-400'}`} style={{ height: 260 }}>Loading chart…</div>
           ) : (
-            <ResponsiveContainer width="100%" height={280}>
+            <div style={{ width: '100%', height: 260 }}>
+            <ResponsiveContainer width="100%" height="100%">
               <BarChart data={history}>
                 <CartesianGrid strokeDasharray="3 3" stroke={isDarkMode ? '#334155' : '#f1f5f9'} />
                 <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 11 }} tickCount={6} />
@@ -458,12 +461,13 @@ function Dashboard({ isDarkMode = false }) {
                 <Bar dataKey="volume" fill="#006d35" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
+            </div>
           )}
         </div>
       </div>
 
       {/* ── Grid for Movers & Opportunities ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-6">
         
         {/* Left 2 columns: Top Movers */}
         <div className={`lg:col-span-2 border rounded-2xl p-5 shadow-sm ${isDarkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-gray-200'}`}>
@@ -479,8 +483,8 @@ function Dashboard({ isDarkMode = false }) {
               ))}
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse text-sm">
+            <div className="overflow-x-auto -mx-1">
+              <table className="w-full border-collapse text-sm min-w-[520px]">
                 <thead>
                   <tr className={`border-b ${isDarkMode ? 'border-slate-850' : 'border-gray-100'}`}>
                     {['', 'Symbol', 'Name', 'Price', 'Change', '% Change', 'Volume'].map((h) => (

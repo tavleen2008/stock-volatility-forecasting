@@ -10,8 +10,10 @@ const SESSION_KEY = 'sentivvo_current_session';
 
 function DashboardPage() {
   const [isDarkMode, setIsDarkMode] = React.useState(() => localStorage.getItem('sentivvo_theme') === 'dark');
-  const [sidebarOpen, setSidebarOpen] = React.useState(true);
+  // On mobile start with sidebar closed, on desktop start open
+  const [sidebarOpen, setSidebarOpen] = React.useState(() => window.innerWidth >= 768);
   const [user, setUser] = useState(() => authService.getCurrentUser());
+  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768;
 
   const toggleTheme = () => {
     setIsDarkMode(prev => {
@@ -20,6 +22,19 @@ function DashboardPage() {
       return next;
     });
   };
+
+  // Auto-close sidebar on small screens when resizing
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setSidebarOpen(false);
+      } else {
+        setSidebarOpen(true);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Fetch latest user profile from the backend to ensure correct name is shown
   useEffect(() => {
@@ -30,7 +45,6 @@ function DashboardPage() {
       .then((data) => {
         const freshUser = data?.user;
         if (freshUser) {
-          // Merge avatar from local session if backend doesn't return it
           const stored = authService.getCurrentUser();
           const merged = {
             ...stored,
@@ -41,17 +55,22 @@ function DashboardPage() {
           setUser(merged);
         }
       })
-      .catch(() => {
-        // Token may be expired or server is down — just use cached session
-      });
+      .catch(() => {});
   }, []);
 
   return (
     <div className={`sv-app-shell flex h-screen overflow-hidden ${isDarkMode ? 'sv-dashboard-dark' : 'bg-gray-50'}`}>
-      <Sidebar isOpen={sidebarOpen} isDarkMode={isDarkMode} />
+      {/* Mobile overlay — clicking it closes the sidebar */}
+      {sidebarOpen && window.innerWidth < 768 && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+      <Sidebar isOpen={sidebarOpen} isDarkMode={isDarkMode} onClose={() => setSidebarOpen(false)} />
       <div className="flex flex-col flex-1 overflow-hidden min-w-0">
         <Header
-          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          onToggleSidebar={() => setSidebarOpen(prev => !prev)}
           isDarkMode={isDarkMode}
           onToggleTheme={toggleTheme}
           user={user}

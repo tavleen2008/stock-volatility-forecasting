@@ -311,9 +311,10 @@ function StockComparison({ isDarkMode = false }) {
           Select at least one symbol above
         </div>
       ) : isAnyLoading && chartData.length === 0 ? (
-        <div className={`h-72 rounded-xl animate-pulse ${isDarkMode ? 'bg-slate-800' : 'bg-gray-100'}`} />
+        <div className={`rounded-xl animate-pulse`} style={{ height: 260, background: isDarkMode ? '#1e293b' : '#f1f5f9' }} />
       ) : (
-        <ResponsiveContainer width="100%" height={300}>
+        <div style={{ width: '100%', height: 260 }}>
+        <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 4, right: 8, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke={gridStroke} />
             <XAxis
@@ -346,6 +347,7 @@ function StockComparison({ isDarkMode = false }) {
             ))}
           </LineChart>
         </ResponsiveContainer>
+        </div>
       )}
 
       {/* ── Legend ── */}
